@@ -101,14 +101,26 @@ Base URL: whatever URL this Next app is deployed at (`/api/bank/*`).
 
 ## Dev workflow
 
-1. Copy `.env.local.example` → `.env.local`.
-2. Start both services together:
-   ```
-   bun install
-   bun run dev:mock       # starts Next on :3000 + mock agent on :8787
-   ```
-3. Open http://localhost:3000. The FAB in the bottom-left opens Bushra.
-4. When your real agent is ready, set `NEXT_PUBLIC_AGENT_URL` to its URL and drop `dev:mock` — the UI code doesn't change.
+The web app defaults `NEXT_PUBLIC_AGENT_URL` to same-origin `/api/dev`, which is the built-in mock agent implemented as a Next route handler. So a fresh clone runs end-to-end with just `npm run dev` — no separate service. This also works on Vercel out of the box.
+
+```
+npm install
+npm run dev          # http://localhost:3000
+```
+
+The standalone `bun run mock-agent` and `npm run dev:mock` scripts still exist for CLI-testing the SSE contract from outside the app (curl, Postman, etc.).
+
+When your real agent is ready, set `NEXT_PUBLIC_AGENT_URL=https://your-agent...` — the UI code doesn't change.
+
+## Notes for real agents (stateful vs. stateless hosting)
+
+The `requires_confirmation` event pattern (agent pauses, browser POSTs `/confirmations`, agent resumes on the same SSE) requires the agent to hold session state across two HTTP requests. This is fine on any long-running server (Railway, Fly, Modal, EC2, FastAPI on Cloud Run, etc.) — the vast majority of LLM/agent hosting.
+
+If you host your agent on a **stateless serverless** platform (Vercel/Lambda without a session store), you have two options:
+- Add a shared session store (Redis, Vercel KV) keyed by `promptId`.
+- Skip `requires_confirmation` and let the UI drive the confirmation client-side (this is what the built-in mock does — it never emits `requires_confirmation`; the `TransferConfirmCard` button opens the Face ID modal locally and sends a follow-up chat message on success).
+
+Both options work with zero changes to the web app.
 
 ## Testing the contract
 

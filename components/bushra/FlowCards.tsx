@@ -68,7 +68,11 @@ function TransferConfirmCard({ ctx }: { ctx: FlowContext }) {
       <Row label="المستفيد" value={<span className="text-[13px] font-semibold text-alinma-navy">{recipient}</span>} />
       <Row label="من حساب" value={<span className="text-xs text-alinma-navy">الحساب الجاري • 795000</span>} spacer />
       <button
-        onClick={() => b.send("أكد التحويل بـ Face ID")}
+        onClick={() =>
+          b.requestLocalFaceId(() => {
+            b.send(`نفّذ التحويل — تم Face ID (${amount} ريال إلى ${recipient})`);
+          })
+        }
         className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-[9px] border-0 bg-alinma-navy px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-alinma-navy-2"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">

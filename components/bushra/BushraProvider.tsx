@@ -48,6 +48,12 @@ export type BushraState = {
 
   // Confirmation
   pendingConfirmation: ConfirmationPrompt | null;
+  /**
+   * Client-driven Face ID request (used by the mock so no cross-request
+   * agent state is needed). Real agents keep using `requires_confirmation`
+   * events; both paths render the same modal.
+   */
+  localFaceId: { onOk: () => void } | null;
 
   // Proactive nudge
   proactiveVisible: boolean;
@@ -70,6 +76,7 @@ export type BushraState = {
   confirmFaceId: () => void;
   submitOtp: (otp: string) => void;
   cancelConfirmation: () => void;
+  requestLocalFaceId: (onOk: () => void) => void;
 };
 
 export const BushraContext = createContext<BushraState | null>(null);
@@ -100,6 +107,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
   const [voicePhase, setVoicePhase] = useState<BushraState["voicePhase"]>("idle");
   const [voiceText, setVoiceText] = useState("");
   const [pendingConfirmation, setPendingConfirmation] = useState<ConfirmationPrompt | null>(null);
+  const [localFaceId, setLocalFaceId] = useState<{ onOk: () => void } | null>(null);
   const [proactiveVisible, setProactiveVisible] = useState(false);
 
   // Nudge appears after 5s, mirroring the prototype.
@@ -216,10 +224,22 @@ export function BushraProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const confirmFaceId = useCallback(() => {
+    // Local-mock path: run the callback and clear state.
+    if (localFaceId) {
+      const { onOk } = localFaceId;
+      setLocalFaceId(null);
+      onOk();
+      return;
+    }
+    // Real-agent path: POST /confirmations so the agent resumes.
     if (!pendingConfirmation) return;
     session.confirm({ promptId: pendingConfirmation.promptId, ok: true });
     setPendingConfirmation(null);
-  }, [pendingConfirmation, session]);
+  }, [localFaceId, pendingConfirmation, session]);
+
+  const requestLocalFaceId = useCallback((onOk: () => void) => {
+    setLocalFaceId({ onOk });
+  }, []);
 
   const submitOtp = useCallback(
     (otp: string) => {
@@ -231,6 +251,11 @@ export function BushraProvider({ children }: { children: ReactNode }) {
   );
 
   const cancelConfirmation = useCallback(() => {
+    if (localFaceId) {
+      setLocalFaceId(null);
+      setActiveFlow(null);
+      return;
+    }
     if (!pendingConfirmation) return;
     session.confirm({
       promptId: pendingConfirmation.promptId,
@@ -239,7 +264,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
     });
     setPendingConfirmation(null);
     setActiveFlow(null);
-  }, [pendingConfirmation, session]);
+  }, [localFaceId, pendingConfirmation, session]);
 
   const value = useMemo<BushraState>(
     () => ({
@@ -254,6 +279,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
       voicePhase,
       voiceText,
       pendingConfirmation,
+      localFaceId,
       proactiveVisible,
       openChat,
       closeChat,
@@ -267,6 +293,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
       setVoiceText,
       dismissProactive,
       confirmFaceId,
+      requestLocalFaceId,
       submitOtp,
       cancelConfirmation,
     }),
@@ -282,6 +309,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
       voicePhase,
       voiceText,
       pendingConfirmation,
+      localFaceId,
       proactiveVisible,
       openChat,
       closeChat,
@@ -292,6 +320,7 @@ export function BushraProvider({ children }: { children: ReactNode }) {
       stopVoice,
       dismissProactive,
       confirmFaceId,
+      requestLocalFaceId,
       submitOtp,
       cancelConfirmation,
     ],

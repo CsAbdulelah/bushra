@@ -1,5 +1,9 @@
+/**
+ * Same-origin `/api/dev` is the built-in mock agent. Colleagues' real
+ * agent goes on `NEXT_PUBLIC_AGENT_URL` when ready.
+ */
 export const clientConfig = {
-  agentUrl: process.env.NEXT_PUBLIC_AGENT_URL ?? "http://localhost:8787",
+  agentUrl: process.env.NEXT_PUBLIC_AGENT_URL || "/api/dev",
   asrUrl: process.env.NEXT_PUBLIC_ASR_URL ?? "",
   ttsUrl: process.env.NEXT_PUBLIC_TTS_URL ?? "",
 } as const;
