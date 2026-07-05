@@ -1,12 +1,11 @@
-import { runChat, type BankResult } from "@/lib/mock-agent/flows";
+import { runChat } from "@/lib/mock-agent/flows";
+import { bankExec } from "@/lib/mock-agent/bank-exec";
 import { encodeEvent, type BushraEvent } from "@/lib/bushra/events";
-import { serverConfig } from "@/lib/config";
 
 /**
- * In-repo mock agent as a Next.js route handler. Runs on Vercel serverless
- * (Node runtime) — stateless per request, no cross-request pending state.
- *
- * The web app defaults to hitting this when NEXT_PUBLIC_AGENT_URL isn't set.
+ * Built-in mock agent, exposed as a Next.js route handler.
+ * Runs on Vercel out of the box — same-origin, no separate service,
+ * no cross-request state, no auth header dance.
  */
 
 export const runtime = "nodejs";
@@ -18,32 +17,13 @@ export async function POST(req: Request): Promise<Response> {
   const body = (await req.json().catch(() => null)) as Body | null;
   if (!body?.text) return new Response("bad request", { status: 400 });
 
-  const origin = new URL(req.url).origin;
-
-  const bankCall = async (path: string, payload: unknown): Promise<BankResult> => {
-    try {
-      const res = await fetch(`${origin}${path}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Bushra-Mock-Key": serverConfig.bankKey,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) return { ok: false, error: `bank returned ${res.status}` };
-      return { ok: true, data: await res.json() };
-    } catch (err) {
-      return { ok: false, error: err instanceof Error ? err.message : "bank call failed" };
-    }
-  };
-
   const enc = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const push = (evt: BushraEvent) => controller.enqueue(enc.encode(encodeEvent(evt)));
       push({ type: "session", sessionId: body.sessionId });
       try {
-        await runChat(body.text, push, bankCall);
+        await runChat(body.text, push, bankExec);
       } catch (err) {
         push({
           type: "error",
