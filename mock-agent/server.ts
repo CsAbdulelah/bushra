@@ -122,24 +122,33 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
     return;
   }
 
-  if (matches(t, ["سدد شركة", "الرئيسي"])) {
+  // Bill selection — user tapped one of the two options; text carries the amount.
+  if (t.startsWith("سدد شركة الكهرباء")) {
+    const isSub = t.includes("الفرعي");
+    const amount = isSub ? 94 : 186;
+    const biller = isSub ? "شركة الكهرباء — الحساب الفرعي" : "شركة الكهرباء السعودية";
     push({
       type: "flow",
       flow: "bill-confirm",
-      context: { selected: { biller: "شركة الكهرباء السعودية", amount: 186, due: "30 يونيو 2026" } },
+      context: { selected: { biller, amount, due: "30 يونيو 2026" } },
     });
     await tokenize("تفاصيل الفاتورة:", push);
     return;
   }
 
+  // Bill confirm — text carries the amount so we know which biller to pay.
   if (matches(t, ["أكد سداد"])) {
+    const amount = /186/.test(t) ? 186 : /94/.test(t) ? 94 : 186;
+    const billerId = amount === 94 ? "bill-sub" : "bill-main";
+    const billerLabel = amount === 94 ? "شركة الكهرباء — الحساب الفرعي" : "شركة الكهرباء السعودية";
+
     const toolCallId = crypto.randomUUID();
-    push({ type: "tool_call", toolCallId, name: "pay_bill", args: { billerId: "bill-main", amount: 186 } });
-    const result = await bankCall("/api/bank/bills/pay", { billerId: "bill-main", amount: 186 });
+    push({ type: "tool_call", toolCallId, name: "pay_bill", args: { billerId, amount } });
+    const result = await bankCall("/api/bank/bills/pay", { billerId, amount, billerLabel });
     push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.error });
     const ref = (result.data as { ref?: string } | undefined)?.ref ?? "SADAD-2026-889034";
     await tokenize(
-      `تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\nشركة الكهرباء السعودية\nالمبلغ: 186.00 ريال\nرقم SADAD: ${ref}`,
+      `تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\n${billerLabel}\nالمبلغ: ${amount.toFixed(2)} ريال\nرقم SADAD: ${ref}`,
       push,
     );
     push({ type: "flow", flow: null });

@@ -1,8 +1,8 @@
 "use client";
 
 import { useBushra } from "@/hooks/useBushra";
+import { useLiveBank } from "@/hooks/useLiveBank";
 import type { FlowContext } from "./BushraProvider";
-import { transactions } from "@/lib/bank/fixtures";
 
 export function FlowCards() {
   const b = useBushra();
@@ -28,22 +28,28 @@ function CardShell({ children }: { children: React.ReactNode }) {
 }
 
 function BalanceCard() {
-  const rows = [
-    { label: "الحساب الجاري الرئيسي", amount: "12,450.75 ر.س", meta: "68202824795000", border: "#15233a" },
-    { label: "حساب المصاريف الدورية", amount: "570.04 ر.س", meta: "68202824795003", border: "#7d6e63" },
-    { label: "حساب التوفير", amount: "3,200.00 ر.س", meta: "عائد 2% سنوياً", border: "#c8a02a" },
-  ];
+  const { accounts } = useLiveBank();
+  const nf = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const borders: Record<string, string> = {
+    "acc-main": "#15233a",
+    "acc-exp": "#7d6e63",
+    "acc-savings": "#c8a02a",
+  };
   return (
     <div className="animate-slide-up mt-1 flex flex-col gap-2">
-      {rows.map((r) => (
+      {accounts.map((a) => (
         <div
-          key={r.label}
+          key={a.id}
           className="rounded-[10px] bg-white p-3 shadow-card"
-          style={{ borderRight: `3px solid ${r.border}` }}
+          style={{ borderRight: `3px solid ${borders[a.id] ?? "#7d6e63"}` }}
         >
-          <div className="mb-1 text-[11px] text-alinma-warm">{r.label}</div>
-          <div className="text-[22px] font-bold text-alinma-navy">{r.amount}</div>
-          <div className="mt-0.5 text-[10px] text-alinma-warm">{r.meta}</div>
+          <div className="mb-1 text-[11px] text-alinma-warm">{a.name}</div>
+          <div className="text-[22px] font-bold text-alinma-navy tabular-nums">
+            {nf.format(a.balance)} ر.س
+          </div>
+          <div className="mt-0.5 text-[10px] text-alinma-warm">
+            {a.id === "acc-savings" ? "عائد 2% سنوياً" : a.iban}
+          </div>
         </div>
       ))}
     </div>
@@ -94,7 +100,7 @@ function BillConfirmCard({ ctx }: { ctx: FlowContext }) {
             {options.map((opt) => (
               <button
                 key={opt.id}
-                onClick={() => b.send(`سدد ${opt.label}`)}
+                onClick={() => b.send(`سدد ${opt.label} ${opt.amount} ريال`)}
                 className="flex cursor-pointer items-center justify-between rounded-[9px] border-[1.5px] border-black/10 bg-alinma-cream px-3.5 py-2.5 text-right text-[13px] text-alinma-navy hover:border-alinma-navy hover:bg-[#f0e8e0]"
               >
                 <span>{opt.label}</span>
@@ -115,7 +121,7 @@ function BillConfirmCard({ ctx }: { ctx: FlowContext }) {
           />
           <div className="flex gap-2">
             <button
-              onClick={() => b.send("أكد سداد الفاتورة")}
+              onClick={() => b.send(`أكد سداد ${selected.amount} ريال`)}
               className="flex-1 cursor-pointer rounded-[9px] border-0 bg-alinma-navy px-3 py-2.5 text-[13px] font-semibold text-white hover:bg-alinma-navy-2"
             >
               تأكيد السداد
@@ -248,19 +254,28 @@ function SavingsCard({ ctx }: { ctx: FlowContext }) {
 }
 
 function TransactionsCard() {
+  const { transactions } = useLiveBank();
+  const rows = transactions.slice(0, 5);
   return (
     <CardShell>
       <div dir="rtl">
         <div className="mb-2.5 text-xs font-bold text-alinma-navy">آخر 5 معاملات</div>
         <div className="flex flex-col">
-          {transactions.map((tx, i) => (
+          {rows.length === 0 && (
+            <div className="py-2 text-center text-[11px] text-alinma-warm">لا توجد معاملات</div>
+          )}
+          {rows.map((tx, i) => (
             <div
               key={tx.id}
               className={`flex items-center justify-between py-2 ${
-                i < transactions.length - 1 ? "border-b border-black/[0.05]" : ""
+                i < rows.length - 1 ? "border-b border-black/[0.05]" : ""
               }`}
             >
-              <div className={`text-[13px] font-bold ${tx.amount > 0 ? "text-alinma-green" : "text-alinma-red"}`}>
+              <div
+                className={`text-[13px] font-bold tabular-nums ${
+                  tx.amount > 0 ? "text-alinma-green" : "text-alinma-red"
+                }`}
+              >
                 {tx.amount > 0 ? "+" : "-"}
                 {Math.abs(tx.amount)} ر.س
               </div>

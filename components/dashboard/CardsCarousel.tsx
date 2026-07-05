@@ -1,4 +1,6 @@
-import { cards } from "@/lib/bank/fixtures";
+"use client";
+
+import { useLiveBank } from "@/hooks/useLiveBank";
 
 const gradients: Record<string, string> = {
   visa: "linear-gradient(135deg,#15233a 0%,#2a4a78 100%)",
@@ -15,6 +17,8 @@ const labels: Record<string, string> = {
 const nf = new Intl.NumberFormat("en-US");
 
 export function CardsCarousel() {
+  const { cards } = useLiveBank();
+
   return (
     <section className="rounded-2xl bg-white p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
@@ -23,18 +27,27 @@ export function CardsCarousel() {
       </div>
 
       <div className="flex gap-3.5">
+        {cards.length === 0 && (
+          <>
+            <div className="h-[120px] flex-1 animate-pulse rounded-2xl bg-alinma-sand" />
+            <div className="h-[120px] flex-1 animate-pulse rounded-2xl bg-alinma-sand" />
+            <div className="h-[120px] flex-1 animate-pulse rounded-2xl bg-alinma-sand" />
+          </>
+        )}
         {cards.map((c) => (
           <div
             key={c.id}
-            className="relative min-h-[120px] flex-1 overflow-hidden rounded-2xl p-[18px] text-white"
+            className="relative min-h-[120px] flex-1 overflow-hidden rounded-2xl p-[18px] text-white transition-all"
             style={{ background: gradients[c.brand] }}
           >
             {c.brand === "visa" && (
               <div className="absolute -top-5 -right-5 h-[90px] w-[90px] rounded-full bg-white/5" />
             )}
+
             <div className="mb-4 flex items-start justify-between">
               <div className="text-[11px] font-extrabold tracking-widest opacity-80">
                 {c.brand === "travel" ? "✈ TRAVEL" : c.network}
+                {c.frozen && <span className="mr-1 text-[10px] font-bold text-[#ff9a9a]">• مجمّدة</span>}
               </div>
               <div className="rounded-md bg-white/[0.12] px-2 py-[3px] text-[10px]">{labels[c.brand]}</div>
             </div>
@@ -56,6 +69,15 @@ export function CardsCarousel() {
                 </div>
               </div>
             </div>
+
+            {c.frozen && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 backdrop-blur-[1px]">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl">🔒</span>
+                  <span className="text-[11px] font-semibold tracking-wide">مجمّدة</span>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
