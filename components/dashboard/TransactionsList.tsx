@@ -1,8 +1,13 @@
-import { transactions } from "@/lib/bank/fixtures";
+"use client";
+
+import { useLiveBank } from "@/hooks/useLiveBank";
 
 const nf = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function TransactionsList() {
+  const { transactions } = useLiveBank();
+  const rows = transactions.slice(0, 5);
+
   return (
     <section className="rounded-2xl bg-white p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
@@ -10,16 +15,17 @@ export function TransactionsList() {
         <span className="text-[17px] font-bold">آخر المعاملات</span>
       </div>
       <div className="flex flex-col">
-        {transactions.map((tx, i) => {
+        {rows.length === 0 && <div className="py-6 text-center text-xs text-alinma-warm">لا توجد معاملات بعد</div>}
+        {rows.map((tx, i) => {
           const positive = tx.amount > 0;
           return (
             <div
               key={tx.id}
               className={`flex items-center justify-between py-2.5 ${
-                i < transactions.length - 1 ? "border-b border-black/[0.05]" : ""
+                i < rows.length - 1 ? "border-b border-black/[0.05]" : ""
               }`}
             >
-              <div className={`text-[13px] font-bold ${positive ? "text-alinma-green" : "text-alinma-red"}`}>
+              <div className={`text-[13px] font-bold tabular-nums ${positive ? "text-alinma-green" : "text-alinma-red"}`}>
                 {positive ? "+" : "−"}
                 {nf.format(Math.abs(tx.amount))} ر.س
               </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { withBankAuth, cors } from "@/lib/bank/auth";
+import { cors } from "@/lib/bank/auth";
 import { bank } from "@/lib/bank/store";
 
-export const GET = withBankAuth(async () =>
-  cors(NextResponse.json({ opportunities: bank.savingsOpportunities() })),
-);
+export async function GET() {
+  return cors(NextResponse.json({ opportunities: bank.savingsOpportunities() }));
+}

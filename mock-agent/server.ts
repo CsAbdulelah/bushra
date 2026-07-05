@@ -12,10 +12,26 @@
 import type { BushraEvent } from "@/lib/bushra/events";
 
 const PORT = Number(process.env.PORT ?? 8787);
+const BANK_BASE = process.env.BANK_BASE ?? "http://localhost:3000";
+const BANK_KEY = process.env.BUSHRA_MOCK_BANK_KEY ?? "dev-secret-change-me";
 
 type PendingResolver = (payload: { ok: boolean; otp?: string; reason?: string }) => void;
 
 const pending = new Map<string, PendingResolver>();
+
+async function bankCall(path: string, body: unknown): Promise<{ ok: boolean; data?: unknown; error?: string }> {
+  try {
+    const res = await fetch(`${BANK_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Bushra-Mock-Key": BANK_KEY },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return { ok: false, error: `bank returned ${res.status}` };
+    return { ok: true, data: await res.json() };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "bank call failed" };
+  }
+}
 
 const enc = new TextEncoder();
 
@@ -78,11 +94,13 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
         return;
       }
     }
-    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "transfer", args: { amount: 300, recipient: "محمد سامي" } });
-    await sleep(400);
-    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true, summary: "transfer completed" });
+    const toolCallId = crypto.randomUUID();
+    push({ type: "tool_call", toolCallId, name: "transfer", args: { amount: 300, recipient: "محمد سامي" } });
+    const result = await bankCall("/api/bank/transfers", { fromAccountId: "acc-main", recipient: "محمد سامي", amount: 300 });
+    push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.ok ? "transfer completed" : result.error });
+    const ref = (result.data as { ref?: string } | undefined)?.ref ?? "INM-2026-447821";
     await tokenize(
-      "تم التحويل بنجاح! ✅\n━━━━━━━━━━━━━━━\nالمبلغ: 300.00 ريال\nإلى: محمد سامي\nرقم المرجع: INM-2026-447821",
+      `تم التحويل بنجاح! ✅\n━━━━━━━━━━━━━━━\nالمبلغ: 300.00 ريال\nإلى: محمد سامي\nرقم المرجع: ${ref}`,
       push,
     );
     push({ type: "flow", flow: null });
@@ -115,11 +133,13 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
   }
 
   if (matches(t, ["أكد سداد"])) {
-    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "pay_bill", args: { billerId: "bill-main", amount: 186 } });
-    await sleep(400);
-    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    const toolCallId = crypto.randomUUID();
+    push({ type: "tool_call", toolCallId, name: "pay_bill", args: { billerId: "bill-main", amount: 186 } });
+    const result = await bankCall("/api/bank/bills/pay", { billerId: "bill-main", amount: 186 });
+    push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.error });
+    const ref = (result.data as { ref?: string } | undefined)?.ref ?? "SADAD-2026-889034";
     await tokenize(
-      "تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\nشركة الكهرباء السعودية\nالمبلغ: 186.00 ريال\nرقم SADAD: SADAD-2026-889034",
+      `تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\nشركة الكهرباء السعودية\nالمبلغ: 186.00 ريال\nرقم SADAD: ${ref}`,
       push,
     );
     push({ type: "flow", flow: null });
@@ -133,9 +153,10 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
   }
 
   if (matches(t, ["أكد تجميد"])) {
-    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "freeze_card", args: { cardId: "card-visa" } });
-    await sleep(300);
-    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    const toolCallId = crypto.randomUUID();
+    push({ type: "tool_call", toolCallId, name: "freeze_card", args: { cardId: "card-visa" } });
+    const result = await bankCall("/api/bank/cards/card-visa/freeze", { frozen: true });
+    push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.error });
     await tokenize(
       "تم تجميد البطاقة! 🔒\n━━━━━━━━━━━━━━━\nVISA *** 4521\nيمكنك رفع التجميد بأمر صوتي \"ارفع تجميد بطاقتي\"",
       push,
@@ -145,9 +166,10 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
   }
 
   if (matches(t, ["ارفع التجميد", "رفع التجميد"])) {
-    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "unfreeze_card", args: { cardId: "card-visa" } });
-    await sleep(300);
-    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    const toolCallId = crypto.randomUUID();
+    push({ type: "tool_call", toolCallId, name: "unfreeze_card", args: { cardId: "card-visa" } });
+    const result = await bankCall("/api/bank/cards/card-visa/freeze", { frozen: false });
+    push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.error });
     await tokenize("تم رفع التجميد! 🔓\n━━━━━━━━━━━━━━━\nVISA *** 4521 نشطة الآن.", push);
     push({ type: "flow", flow: null });
     return;
@@ -163,9 +185,10 @@ async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<
   }
 
   if (matches(t, ["حوّل الآن للادخار", "نعم، حوّل"])) {
-    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "open_savings", args: { amount: 1200 } });
-    await sleep(300);
-    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    const toolCallId = crypto.randomUUID();
+    push({ type: "tool_call", toolCallId, name: "open_savings", args: { amount: 1200 } });
+    const result = await bankCall("/api/bank/savings/move", { amount: 1200 });
+    push({ type: "tool_result", toolCallId, ok: result.ok, summary: result.error });
     await tokenize(
       "تم التحويل لحساب التوفير! ✅\n━━━━━━━━━━━━━━━\n1,200 ريال → برنامج الادخار الإنماء\nالعائد السنوي: 24.00 ريال 🎉",
       push,

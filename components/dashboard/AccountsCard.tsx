@@ -1,9 +1,13 @@
-import { accounts } from "@/lib/bank/fixtures";
+"use client";
+
+import { useLiveBank } from "@/hooks/useLiveBank";
 
 const nf = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export function AccountsCard() {
+  const { accounts } = useLiveBank();
   const shown = accounts.slice(0, 2);
+
   return (
     <section className="rounded-2xl bg-white p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
@@ -27,7 +31,7 @@ export function AccountsCard() {
         {shown.map((acc, i) => (
           <div
             key={acc.id}
-            className={`flex-1 rounded-xl bg-white p-4 ${
+            className={`flex-1 rounded-xl bg-white p-4 transition-colors ${
               i === 0 ? "border-2 border-alinma-navy" : "border border-black/10"
             }`}
           >
@@ -40,11 +44,14 @@ export function AccountsCard() {
               {acc.iban}
             </div>
             <div className="mt-3.5 flex items-center justify-end gap-1">
-              <span className="text-[15px] font-bold text-alinma-navy">{nf.format(acc.balance)} ر.س</span>
+              <span className="text-[15px] font-bold text-alinma-navy tabular-nums">
+                {nf.format(acc.balance)} ر.س
+              </span>
               <span className="text-xs text-alinma-warm">:الرصيد</span>
             </div>
           </div>
         ))}
+        {shown.length === 0 && <SkeletonRow />}
       </div>
     </section>
   );
@@ -58,5 +65,14 @@ function ArrowBtn({ dir }: { dir: "left" | "right" }) {
         <polyline points={points} />
       </svg>
     </button>
+  );
+}
+
+function SkeletonRow() {
+  return (
+    <>
+      <div className="h-24 flex-1 animate-pulse rounded-xl bg-alinma-sand" />
+      <div className="h-24 flex-1 animate-pulse rounded-xl bg-alinma-sand" />
+    </>
   );
 }
