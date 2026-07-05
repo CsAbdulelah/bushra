@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #ede4d8; overflow: hidden; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(21,35,58,0.15); border-radius: 2px; }
+    @keyframes blink {
+      0%,80%,100% { opacity: 0.2; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes glowPulse {
+      0%,100% { box-shadow: 0 4px 20px rgba(21,35,58,0.4); }
+      50% { box-shadow: 0 4px 32px rgba(21,35,58,0.7), 0 0 0 10px rgba(21,35,58,0.08); }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(14px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes waveBar {
+      0%,100% { transform: scaleY(0.25); }
+      50% { transform: scaleY(1); }
+    }
+    @keyframes faceRing {
+      0% { transform: scale(0.85); opacity: 0.5; }
+      50% { transform: scale(1.15); opacity: 0.1; }
+      100% { transform: scale(0.85); opacity: 0.5; }
+    }
+    @keyframes faceScan {
+      0% { top: 18%; } 50% { top: 76%; } 100% { top: 18%; }
+    }
+    @keyframes otpShake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); } 40% { transform: translateX(4px); }
+      60% { transform: translateX(-4px); } 80% { transform: translateX(4px); }
+    }
+    @keyframes checkPop {
+      0% { transform: scale(0); opacity: 0; }
+      60% { transform: scale(1.2); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</helmet>
+
+<div style="display:flex;flex-direction:column;height:100vh;font-family:'Cairo',sans-serif;color:#15233a;overflow:hidden">
+
+  <!-- HEADER -->
+  <header dir="ltr" style="height:64px;background:white;display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0;border-bottom:1px solid rgba(0,0,0,0.07);z-index:10">
+    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div style="width:46px;height:46px;background:#15233a;border-radius:9px;display:flex;align-items:center;justify-content:center;color:white;font-size:22px;font-weight:800">ا</div>
+      <div>
+        <div style="font-size:17px;font-weight:800;color:#15233a;line-height:1.1;direction:rtl">الإنماء</div>
+        <div style="font-size:10px;color:#15233a;letter-spacing:1.5px;font-weight:600">alinma</div>
+      </div>
+    </div>
+    <div style="flex:1;max-width:480px;margin:0 20px;background:#f5ede8;border-radius:24px;display:flex;align-items:center;padding:9px 16px;gap:8px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="بحث" style="border:none;background:transparent;font-family:'Cairo',sans-serif;font-size:14px;color:#7d6e63;outline:none;flex:1;direction:rtl" />
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;background:#f5ede8;border-radius:20px;padding:8px 14px;cursor:pointer;flex-shrink:0;margin-left:auto">
+      <span style="font-size:13px;direction:rtl">مرحباً، عبدالله الكسيبيري</span>
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+    </div>
+    <div style="display:flex;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;font-size:13px;font-weight:500">
+      English
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    </div>
+    <button style="display:flex;align-items:center;gap:6px;border:1.5px solid #15233a;background:transparent;border-radius:8px;padding:8px 14px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;color:#15233a;flex-shrink:0">
+      خروج
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </header>
+
+  <!-- BODY -->
+  <div dir="rtl" style="display:flex;flex:1;overflow:hidden">
+
+    <!-- RIGHT NAV -->
+    <nav style="width:205px;background:white;border-left:1px solid rgba(0,0,0,0.06);overflow-y:auto;flex-shrink:0;padding:6px 0">
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600" style-hover="background:#f5ede8">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="#15233a"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>لوحة التحكم</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;background:#f0e8e0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="flex:1">الحسابات</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2.5"><polyline points="18,15 12,9 6,15"/></svg>
+      </div>
+      <div style="background:#15233a;color:white;padding:8px 14px;padding-right:32px;font-size:12px;cursor:pointer">حساباتي</div>
+      <div style="padding:8px 32px 8px 14px;font-size:12px;cursor:pointer;color:#7d6e63" style-hover="background:#f5ede8">حساب الأسرة</div>
+      <div style="padding:8px 32px 8px 14px;font-size:12px;cursor:pointer;color:#7d6e63" style-hover="background:#f5ede8">العمالة المنزلية</div>
+      <div style="padding:8px 32px 8px 14px;font-size:12px;cursor:pointer;color:#7d6e63;line-height:1.4" style-hover="background:#f5ede8">الشهادات المصرفية الرقمية</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span style="flex:1">الحوالات</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span style="flex:1">سداد و دفع الفواتير</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+        <span style="flex:1">التمويل والاكتتابات</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
+        <span style="flex:1">استثمار</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        <span style="flex:1">البطاقات</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        <span style="flex:1">الخدمات المصرفية المفتوحة</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span style="flex:1">الخدمات والأدوات</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.07 11.5a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3 .84h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 21 15z"/></svg>
+        <span style="flex:1">المساعدة و الدعم</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;font-size:13px" style-hover="background:#f5ede8">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span style="flex:1">الملف الشخصي</span>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2.5"><polyline points="6,9 12,15 18,9"/></svg>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:12px 14px;margin-top:8px;border-top:1px solid rgba(0,0,0,0.06);cursor:pointer">
+        <div style="width:44px;height:24px;background:#15233a;border-radius:12px;position:relative;flex-shrink:0">
+          <div style="width:18px;height:18px;background:white;border-radius:50%;position:absolute;top:3px;right:3px"></div>
+        </div>
+        <span style="font-size:12px;color:#7d6e63">الوضع الفاتح</span>
+      </div>
+    </nav>
+
+    <!-- CENTER CONTENT -->
+    <main style="flex:1;overflow-y:auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px">
+
+      <!-- Accounts -->
+      <div style="background:white;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <button style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,0.12);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2.5"><polyline points="15,18 9,12 15,6"/></svg></button>
+            <button style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,0.12);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2.5"><polyline points="9,18 15,12 9,6"/></svg></button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:5px;cursor:pointer">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span style="font-size:13px;color:#7d6e63">إظهار الرصيد</span>
+            </div>
+            <span style="font-size:17px;font-weight:700">قائمة الحسابات</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:14px">
+          <div style="flex:1;border:2px solid #15233a;border-radius:12px;padding:16px;background:white">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="background:#e8dfd6;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600">حساب جاري</span>
+              <span style="color:#f5b91e;font-size:18px">★</span>
+            </div>
+            <div style="font-size:12px;color:#7d6e63;margin-bottom:2px">68202824795000</div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:14px;gap:4px">
+              <span style="font-size:15px;font-weight:700;color:#15233a">12,450.75 ر.س</span>
+              <span style="font-size:12px;color:#7d6e63">:الرصيد</span>
+            </div>
+          </div>
+          <div style="flex:1;border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:16px;background:white">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="background:#e8dfd6;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600">حساب جاري</span>
+              <span style="color:#c0b8ae;font-size:18px">☆</span>
+            </div>
+            <div style="font-size:12px;color:#7d6e63;margin-bottom:2px">المصاريف الدورية | 68202824795003</div>
+            <div style="display:flex;align-items:center;justify-content:flex-end;margin-top:14px;gap:4px">
+              <span style="font-size:15px;font-weight:700;color:#15233a">570.04 ر.س</span>
+              <span style="font-size:12px;color:#7d6e63">:الرصيد</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards Section -->
+      <div style="background:white;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <span style="font-size:13px;color:#7d6e63;cursor:pointer">عرض الكل ›</span>
+          <span style="font-size:17px;font-weight:700">بطاقاتي</span>
+        </div>
+        <div style="display:flex;gap:14px">
+          <div style="flex:1;background:linear-gradient(135deg,#15233a 0%,#2a4a78 100%);border-radius:14px;padding:18px;color:white;position:relative;overflow:hidden;min-height:120px">
+            <div style="position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:rgba(255,255,255,0.05)"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+              <div style="font-size:11px;font-weight:800;letter-spacing:1px;opacity:0.8">VISA</div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:5px;padding:3px 8px;font-size:10px">ائتمانية</div>
+            </div>
+            <div style="font-size:13px;letter-spacing:3px;margin-bottom:14px;opacity:0.9">**** **** **** 4521</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end">
+              <div style="font-size:10px;opacity:0.55">08/28</div>
+              <div style="text-align:right"><div style="font-size:9px;opacity:0.55;margin-bottom:2px">الحد المتاح</div><div style="font-size:13px;font-weight:700">8,500 ر.س</div></div>
+            </div>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#2e5d38,#3d7a4a);border-radius:14px;padding:18px;color:white;position:relative;overflow:hidden;min-height:120px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:800;letter-spacing:1px;opacity:0.85">mada</div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:5px;padding:3px 8px;font-size:10px">مدى</div>
+            </div>
+            <div style="font-size:13px;letter-spacing:3px;margin-bottom:14px;opacity:0.9">**** **** **** 7830</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end">
+              <div style="font-size:10px;opacity:0.55">12/27</div>
+              <div style="text-align:right"><div style="font-size:9px;opacity:0.55;margin-bottom:2px">الرصيد</div><div style="font-size:13px;font-weight:700">12,450 ر.س</div></div>
+            </div>
+          </div>
+          <div style="flex:1;background:linear-gradient(135deg,#6b3fa0,#8b55c0);border-radius:14px;padding:18px;color:white;position:relative;overflow:hidden;min-height:120px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+              <div style="font-size:11px;font-weight:800;opacity:0.8">✈ TRAVEL</div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:5px;padding:3px 8px;font-size:10px">سفر</div>
+            </div>
+            <div style="font-size:11px;opacity:0.65;margin-bottom:10px;line-height:1.4">بطاقة السفر الإنماء</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end">
+              <div style="font-size:10px;opacity:0.55">نشطة</div>
+              <div style="text-align:right"><div style="font-size:9px;opacity:0.55;margin-bottom:2px">الرصيد (USD)</div><div style="font-size:13px;font-weight:700">$240.00</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button style="flex:1;border:1px solid rgba(0,0,0,0.12);background:white;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">🔒 تجميد البطاقة</button>
+          <button style="flex:1;border:1px solid rgba(0,0,0,0.12);background:white;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">💳 رفع الحد</button>
+          <button style="flex:1;border:1px solid rgba(0,0,0,0.12);background:white;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">📋 كشف الحساب</button>
+          <button style="flex:1;border:1px solid rgba(0,0,0,0.12);background:white;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">➕ طلب بطاقة</button>
+        </div>
+      </div>
+
+      <!-- Transfers -->
+      <div style="background:white;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;gap:14px">
+            <button style="display:flex;align-items:center;gap:5px;border:none;background:transparent;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;color:#7d6e63">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7d6e63" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              تحويل جديد
+            </button>
+            <button style="display:flex;align-items:center;gap:5px;border:none;background:transparent;cursor:pointer;font-family:'Cairo',sans-serif;font-size:13px;color:#7d6e63">
+              <span style="font-size:16px">+</span> إضافة مستفيد
+            </button>
+          </div>
+          <span style="font-size:17px;font-weight:700">تحويل أموال</span>
+        </div>
+        <div style="height:1px;background:rgba(0,0,0,0.07);margin-bottom:16px"></div>
+        <div style="display:flex;gap:22px;overflow-x:auto;padding:4px 0">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><div style="width:52px;height:52px;border-radius:50%;background:#f5ede8;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="#f5b91e"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div><span style="font-size:10px;text-align:center;max-width:64px;line-height:1.3">حساب الاستثمار</span><span style="font-size:9px;color:#7d6e63">الإنماء</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><div style="width:52px;height:52px;border-radius:50%;background:#f5ede8;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#15233a">م</div><span style="font-size:11px;text-align:center">محمد سامي</span><span style="font-size:9px;color:#7d6e63">بنك دولي</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><div style="width:52px;height:52px;border-radius:50%;background:#f5ede8;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c0392b">anb</div><span style="font-size:11px;text-align:center">غلياء</span><span style="font-size:9px;color:#7d6e63">بنك محلي</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0"><div style="width:52px;height:52px;border-radius:50%;background:#f5ede8;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center"><div style="width:26px;height:26px;background:#15233a;border-radius:5px;display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:800">ا</div></div><span style="font-size:11px;text-align:center">Flex ktchn</span><span style="font-size:9px;color:#7d6e63">الإنماء</span></div>
+        </div>
+      </div>
+
+      <!-- Recent Transactions -->
+      <div style="background:white;border-radius:14px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,0.05)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <span style="font-size:13px;color:#7d6e63;cursor:pointer">عرض الكل ›</span>
+          <span style="font-size:17px;font-weight:700">آخر المعاملات</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">−186.00 ر.س</div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:13px;font-weight:600">شركة الكهرباء السعودية</div><div style="font-size:10px;color:#7d6e63">25 يونيو 2026 • سداد فاتورة</div></div><div style="width:36px;height:36px;background:#fff5e6;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">⚡</div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">−300.00 ر.س</div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:13px;font-weight:600">محمد سامي</div><div style="font-size:10px;color:#7d6e63">23 يونيو 2026 • تحويل خارجي</div></div><div style="width:36px;height:36px;background:#e8f0fe;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">↗</div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">−540.00 ر.س</div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:13px;font-weight:600">مطعم شاورما الرياض</div><div style="font-size:10px;color:#7d6e63">21 يونيو 2026 • مدفوعات</div></div><div style="width:36px;height:36px;background:#fce8e8;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🍽</div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#3db557">+5,000.00 ر.س</div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:13px;font-weight:600">إيداع راتب</div><div style="font-size:10px;color:#7d6e63">20 يونيو 2026 • تحويل وارد</div></div><div style="width:36px;height:36px;background:#e6f9ec;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">💰</div></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0"><div style="font-size:13px;font-weight:700;color:#e84545">−1,200.00 ر.س</div><div style="display:flex;align-items:center;gap:10px"><div style="text-align:right"><div style="font-size:13px;font-weight:600">هايبر بنده</div><div style="font-size:10px;color:#7d6e63">18 يونيو 2026 • مشتريات</div></div><div style="width:36px;height:36px;background:#f0eaff;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px">🛒</div></div></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- LEFT ASIDE -->
+    <aside style="width:270px;flex-shrink:0;padding:16px;display:flex;flex-direction:column;gap:14px;overflow-y:auto">
+      <div style="display:flex;gap:20px;justify-content:center;padding:10px 0 4px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"><div style="position:relative"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span style="position:absolute;top:-5px;right:-9px;background:#e84545;color:white;border-radius:9px;font-size:8px;padding:1px 4px;font-weight:700;min-width:18px;text-align:center">99+</span></div><span style="font-size:11px">إشعارات</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"><div style="position:relative"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg><span style="position:absolute;top:-5px;right:-9px;background:#e84545;color:white;border-radius:9px;font-size:8px;padding:1px 4px;font-weight:700;min-width:18px;text-align:center">3</span></div><span style="font-size:11px">فواتير</span></div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer"><div style="position:relative"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="1.8"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span style="position:absolute;top:-5px;right:-9px;background:#e84545;color:white;border-radius:9px;font-size:8px;padding:1px 4px;font-weight:700;min-width:18px;text-align:center">1</span></div><span style="font-size:11px">مخالفات</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:white;border-radius:12px;padding:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.05)" style-hover="background:#f8f0ea"><div style="width:44px;height:44px;background:#f5ede8;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div><span style="font-size:13px;font-weight:600">نما</span></div>
+        <div style="background:white;border-radius:12px;padding:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.05)" style-hover="background:#f8f0ea"><div style="width:44px;height:44px;background:#f5ede8;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><span style="font-size:13px;font-weight:600">طلب بطاقة</span></div>
+        <div style="background:white;border-radius:12px;padding:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.05)" style-hover="background:#f8f0ea"><div style="width:44px;height:44px;background:#f5ede8;border-radius:10px;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg></div><span style="font-size:11px;font-weight:600;text-align:center">الإنماء إكسرس</span></div>
+        <div style="background:white;border-radius:12px;padding:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;box-shadow:0 1px 4px rgba(0,0,0,0.05)" style-hover="background:#f8f0ea"><div style="width:44px;height:44px;background:#f5ede8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#c8a02a;letter-spacing:1px">WU</div><span style="font-size:11px;font-weight:600;text-align:center">ويسترن يونيون</span></div>
+      </div>
+      <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+        <div style="font-size:16px;font-weight:700;text-align:right;margin-bottom:6px">أكثر</div>
+        <div style="font-size:12px;color:#7d6e63;text-align:right;line-height:1.6;margin-bottom:10px">اجمع نقاط أكثر مع عملياتك المصرفية بكل سهولة</div>
+        <div style="font-size:20px;font-weight:800;text-align:right;margin-bottom:12px;text-decoration:underline">216,418 نقطة</div>
+        <button style="width:100%;background:transparent;border:1.5px solid #15233a;border-radius:8px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;color:#15233a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" style-hover="background:#f5ede8">استبدل نقاطك <span>›</span></button>
+      </div>
+      <div style="background:white;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,0.05)">
+        <div style="font-size:15px;font-weight:700;text-align:right;margin-bottom:12px">ملخص الإنفاق — يونيو</div>
+        <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;min-width:70px;text-align:left">540 ر.س</span><div style="flex:1;height:6px;background:#f0e8e0;border-radius:3px;overflow:hidden"><div style="height:100%;width:45%;background:#15233a;border-radius:3px"></div></div><span style="font-size:11px;color:#7d6e63;min-width:46px;text-align:right">مطاعم</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;min-width:70px;text-align:left">1,200 ر.س</span><div style="flex:1;height:6px;background:#f0e8e0;border-radius:3px;overflow:hidden"><div style="height:100%;width:76%;background:#7d6e63;border-radius:3px"></div></div><span style="font-size:11px;color:#7d6e63;min-width:46px;text-align:right">تسوق</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;min-width:70px;text-align:left">186 ر.س</span><div style="flex:1;height:6px;background:#f0e8e0;border-radius:3px;overflow:hidden"><div style="height:100%;width:16%;background:#c8a02a;border-radius:3px"></div></div><span style="font-size:11px;color:#7d6e63;min-width:46px;text-align:right">فواتير</span></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:600;min-width:70px;text-align:left">300 ر.س</span><div style="flex:1;height:6px;background:#f0e8e0;border-radius:3px;overflow:hidden"><div style="height:100%;width:25%;background:#3d7a4a;border-radius:3px"></div></div><span style="font-size:11px;color:#7d6e63;min-width:46px;text-align:right">تحويلات</span></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ═══ BUSHRA FLOATING UI ═══ -->
+  <div style="position:fixed;bottom:28px;left:28px;z-index:1000;display:flex;flex-direction:column;align-items:center;gap:10px">
+
+    <!-- Proactive notification -->
+    <sc-if value="{{ proactiveVisible }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#15233a;color:white;border-radius:16px;padding:16px;width:320px;box-shadow:0 8px 36px rgba(21,35,58,0.4);animation:slideUp 0.4s ease-out;position:relative" dir="rtl">
+        <button onClick="{{ dismissProactive }}" style="position:absolute;top:10px;left:12px;background:transparent;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:20px;line-height:1;padding:2px 4px" style-hover="color:rgba(255,255,255,0.8)">×</button>
+        <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-bottom:6px">✨ بشرى • الآن</div>
+        <div style="font-size:13px;line-height:1.6;margin-bottom:12px">لاحظت أنك تحتفظ بـ 1,200 ريال شهرياً دون استثمار — برنامج ادخار الإنماء يمنحك 2% سنوياً</div>
+        <button onClick="{{ openSavingsProactive }}" style="width:100%;background:rgba(255,255,255,0.13);border:1px solid rgba(255,255,255,0.22);border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;color:white;cursor:pointer" style-hover="background:rgba(255,255,255,0.2)">عرض الفرصة ←</button>
+      </div>
+    </sc-if>
+
+    <!-- Bushra FAB -->
+    <button onClick="{{ toggleChat }}" title="بشرى" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#15233a,#1d3460);border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;animation:glowPulse 3s ease-in-out infinite;color:white">
+      <svg width="23" height="23" viewBox="0 0 24 24" fill="white"><path d="M12 2l1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4L12 2z"/><path d="M19.5 14.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2z" opacity="0.65"/><path d="M5 3l.6 1.4 1.4.6-1.4.6L5 7l-.6-1.4L3 5l1.4-.6L5 3z" opacity="0.5"/></svg>
+      <span style="font-size:9px;font-weight:800;letter-spacing:0.5px;margin-top:1px">بشرى</span>
+    </button>
+  </div>
+
+  <!-- ═══ VOICE OVERLAY ═══ -->
+  <sc-if value="{{ voiceOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(13,27,46,0.94);z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;animation:slideUp 0.3s ease-out" dir="rtl">
+      <!-- Top bar -->
+      <div style="position:absolute;top:24px;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:0 28px">
+        <button onClick="{{ stopVoice }}" style="background:rgba(255,255,255,0.1);border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,0.2)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2l1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4L12 2z"/></svg>
+          <span style="font-size:15px;font-weight:700;color:white">بشرى</span>
+        </div>
+        <div style="width:40px"></div>
+      </div>
+
+      <!-- Status label -->
+      <div style="font-size:14px;color:rgba(255,255,255,0.65);letter-spacing:0.5px">{{ voiceStatusLabel }}</div>
+
+      <!-- Waveform ring -->
+      <div style="position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center">
+        <div style="position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(255,255,255,0.08);animation:faceRing 2s ease-in-out infinite"></div>
+        <div style="position:absolute;inset:14px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.12);animation:faceRing 2s ease-in-out 0.4s infinite"></div>
+        <div style="width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center">
+          <!-- Live waveform bars -->
+          <div style="display:flex;align-items:center;gap:3px;height:36px">
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.09s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.18s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.27s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.36s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.45s infinite;opacity:{{ waveOpacity }}"></div>
+            <div style="width:3px;height:100%;background:white;border-radius:2px;transform-origin:center;animation:waveBar 0.6s ease-in-out 0.54s infinite;opacity:{{ waveOpacity }}"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recognised text -->
+      <div style="min-height:44px;text-align:center;padding:0 40px">
+        <div style="font-size:20px;font-weight:700;color:white;line-height:1.4">{{ voiceText }}</div>
+      </div>
+
+      <!-- Demo voice commands -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;max-width:340px">
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-bottom:2px">جرّب قل واحدة من هذه:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+          <button onClick="{{ voiceCmd0 }}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.75);cursor:pointer" style-hover="background:rgba(255,255,255,0.15)">حولي 300 ريال لمحمد</button>
+          <button onClick="{{ voiceCmd1 }}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.75);cursor:pointer" style-hover="background:rgba(255,255,255,0.15)">ما رصيدي؟</button>
+          <button onClick="{{ voiceCmd2 }}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.75);cursor:pointer" style-hover="background:rgba(255,255,255,0.15)">سددي فاتورة الكهرباء</button>
+          <button onClick="{{ voiceCmd3 }}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.75);cursor:pointer" style-hover="background:rgba(255,255,255,0.15)">اجمّدي بطاقتي</button>
+          <button onClick="{{ voiceCmd4 }}" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:20px;padding:7px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.75);cursor:pointer" style-hover="background:rgba(255,255,255,0.15)">فرص الادخار</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ FACE ID OVERLAY ═══ -->
+  <sc-if value="{{ faceIdOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:2001;display:flex;align-items:center;justify-content:center;animation:slideUp 0.25s ease-out">
+      <div style="background:#0d1b2e;border-radius:24px;padding:36px 32px;width:300px;display:flex;flex-direction:column;align-items:center;gap:20px" dir="rtl">
+        <div style="font-size:15px;font-weight:700;color:white">{{ faceIdTitle }}</div>
+        <!-- Face ID frame -->
+        <div style="position:relative;width:120px;height:120px">
+          <div style="position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,0.15)"></div>
+          <!-- Corner brackets -->
+          <div style="position:absolute;top:0;right:0;width:22px;height:22px;border-top:3px solid white;border-right:3px solid white;border-radius:0 6px 0 0"></div>
+          <div style="position:absolute;top:0;left:0;width:22px;height:22px;border-top:3px solid white;border-left:3px solid white;border-radius:6px 0 0 0"></div>
+          <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-bottom:3px solid white;border-right:3px solid white;border-radius:0 0 6px 0"></div>
+          <div style="position:absolute;bottom:0;left:0;width:22px;height:22px;border-bottom:3px solid white;border-left:3px solid white;border-radius:0 0 0 6px"></div>
+          <!-- Face icon -->
+          <div style="position:absolute;inset:20px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <!-- Scan line -->
+          <sc-if value="{{ faceScanning }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,rgba(100,200,255,0.8),transparent);animation:faceScan 1.8s ease-in-out infinite"></div>
+          </sc-if>
+          <!-- Success check -->
+          <sc-if value="{{ faceSuccess }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div style="width:52px;height:52px;background:#3db557;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:checkPop 0.4s ease-out">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20,6 9,17 4,12"/></svg>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center">{{ faceIdSubtitle }}</div>
+        <sc-if value="{{ faceScanning }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:8px;width:100%">
+            <button onClick="{{ useFaceId }}" style="flex:1;background:white;color:#0d1b2e;border:none;border-radius:10px;padding:12px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer" style-hover="background:#e8e8e8">تأكيد بـ Face ID</button>
+            <button onClick="{{ skipFaceId }}" style="background:rgba(255,255,255,0.08);border:none;border-radius:10px;padding:12px 14px;font-family:'Cairo',sans-serif;font-size:12px;color:rgba(255,255,255,0.55);cursor:pointer" style-hover="background:rgba(255,255,255,0.14)">OTP</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═══ BUSHRA CHAT PANEL ═══ -->
+  <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:110px;left:28px;width:390px;background:white;border-radius:20px;box-shadow:0 16px 56px rgba(0,0,0,0.2);display:flex;flex-direction:column;z-index:999;animation:slideUp 0.3s ease-out;overflow:hidden;max-height:600px">
+
+      <!-- Chat header -->
+      <div style="background:linear-gradient(135deg,#0d1b2e,#1a3560);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0" dir="rtl">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:40px;height:40px;background:rgba(255,255,255,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2l1.4 5.6L19 9l-5.6 1.4L12 16l-1.4-5.6L5 9l5.6-1.4L12 2z"/></svg>
+            <div style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#3db557;border-radius:50%;border:2px solid #0d1b2e"></div>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:white">بشرى</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5)">مساعدة الإنماء الذكية • متاحة الآن</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <!-- Voice button in header -->
+          <button onClick="{{ openVoice }}" style="width:32px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,0.2)" title="وضع الصوت">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" stroke="white" fill="none" stroke-width="1.5"/><line x1="12" y1="19" x2="12" y2="23" stroke="white" stroke-width="1.5"/><line x1="8" y1="23" x2="16" y2="23" stroke="white" stroke-width="1.5"/></svg>
+          </button>
+          <button onClick="{{ resetChat }}" style="background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:5px 10px;cursor:pointer;font-family:'Cairo',sans-serif;font-size:10px;color:rgba(255,255,255,0.6)" style-hover="background:rgba(255,255,255,0.15)">جديد</button>
+          <button onClick="{{ closeChat }}" style="width:32px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,0.2)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages area -->
+      <div id="bushra-msgs" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:4px;background:#f9f8f6;max-height:400px" dir="rtl">
+
+        <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="1">
+          <div style="display:flex;justify-content:{{ msg.justify }};margin-bottom:4px">
+            <div style="max-width:80%;background:{{ msg.bubbleBg }};color:{{ msg.textColor }};border-radius:{{ msg.bubbleRadius }};padding:10px 13px;font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word">
+              {{ msg.text }}
+              <div style="font-size:9px;opacity:0.4;margin-top:3px;text-align:left;direction:ltr">{{ msg.time }}</div>
+            </div>
+          </div>
+        </sc-for>
+
+        <!-- Typing -->
+        <sc-if value="{{ isTyping }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;justify-content:flex-end">
+            <div style="background:#f0e9e2;border-radius:12px 12px 12px 4px;padding:12px 16px;display:flex;gap:5px;align-items:center">
+              <div style="width:7px;height:7px;background:#7d6e63;border-radius:50%;animation:blink 1.4s ease-in-out 0s infinite"></div>
+              <div style="width:7px;height:7px;background:#7d6e63;border-radius:50%;animation:blink 1.4s ease-in-out 0.2s infinite"></div>
+              <div style="width:7px;height:7px;background:#7d6e63;border-radius:50%;animation:blink 1.4s ease-in-out 0.4s infinite"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Balance -->
+        <sc-if value="{{ isBalance }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;animation:slideUp 0.3s ease-out">
+            <div style="background:white;border-radius:10px;padding:13px;border-right:3px solid #15233a;box-shadow:0 1px 4px rgba(0,0,0,0.06)"><div style="font-size:11px;color:#7d6e63;margin-bottom:4px">الحساب الجاري الرئيسي</div><div style="font-size:22px;font-weight:700;color:#15233a">12,450.75 ر.س</div><div style="font-size:10px;color:#7d6e63;margin-top:2px">68202824795000</div></div>
+            <div style="background:white;border-radius:10px;padding:13px;border-right:3px solid #7d6e63;box-shadow:0 1px 4px rgba(0,0,0,0.06)"><div style="font-size:11px;color:#7d6e63;margin-bottom:4px">حساب المصاريف الدورية</div><div style="font-size:22px;font-weight:700;color:#15233a">570.04 ر.س</div><div style="font-size:10px;color:#7d6e63;margin-top:2px">68202824795003</div></div>
+            <div style="background:white;border-radius:10px;padding:13px;border-right:3px solid #c8a02a;box-shadow:0 1px 4px rgba(0,0,0,0.06)"><div style="font-size:11px;color:#7d6e63;margin-bottom:4px">حساب التوفير</div><div style="font-size:22px;font-weight:700;color:#15233a">3,200.00 ر.س</div><div style="font-size:10px;color:#7d6e63;margin-top:2px">عائد 2% سنوياً</div></div>
+          </div>
+        </sc-if>
+
+        <!-- Transfer review -->
+        <sc-if value="{{ isTransferConfirm }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out">
+            <div style="font-size:12px;font-weight:700;color:#15233a;margin-bottom:10px;text-align:right">مراجعة التحويل</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid rgba(0,0,0,0.05)"><span style="font-size:16px;font-weight:700;color:#15233a">300.00 ر.س</span><span style="font-size:11px;color:#7d6e63">المبلغ</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600;color:#15233a">محمد سامي</span><span style="font-size:11px;color:#7d6e63">المستفيد</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="font-size:12px;color:#15233a">الحساب الجاري • 795000</span><span style="font-size:11px;color:#7d6e63">من حساب</span></div>
+            <button onClick="{{ requestFaceId }}" style="width:100%;background:#15233a;color:white;border:none;border-radius:9px;padding:11px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px" style-hover="background:#1d3460">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              تأكيد بـ Face ID
+            </button>
+            <button onClick="{{ cancelAction }}" style="width:100%;background:transparent;border:none;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:#7d6e63;cursor:pointer;margin-top:4px" style-hover="color:#15233a">إلغاء</button>
+          </div>
+        </sc-if>
+
+        <!-- OTP Entry -->
+        <sc-if value="{{ isOTPEntry }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:16px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out" dir="rtl">
+            <div style="text-align:center;margin-bottom:14px">
+              <div style="font-size:26px;margin-bottom:6px">📱</div>
+              <div style="font-size:13px;font-weight:700;color:#15233a;margin-bottom:4px">أدخل رمز التحقق</div>
+              <div style="font-size:11px;color:#7d6e63">رمز مكون من 6 أرقام • الجوال المنتهي بـ ••30</div>
+            </div>
+            <div style="display:flex;gap:7px;justify-content:center;margin-bottom:14px" dir="ltr">
+              <input id="otp1" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+              <input id="otp2" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+              <input id="otp3" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+              <input id="otp4" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+              <input id="otp5" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+              <input id="otp6" type="text" maxlength="1" style="width:38px;height:46px;text-align:center;border:2px solid rgba(0,0,0,0.12);border-radius:10px;font-size:20px;font-weight:700;font-family:'Cairo',sans-serif;outline:none;color:#15233a" style-focus="border-color:#15233a" />
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <button style="background:transparent;border:none;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer;text-decoration:underline">إعادة الإرسال</button>
+              <span style="font-size:11px;color:#7d6e63">{{ otpTimer }} ثانية</span>
+            </div>
+            <button onClick="{{ verifyOTP }}" style="width:100%;background:#15233a;color:white;border:none;border-radius:9px;padding:11px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#1d3460">تأكيد التحويل</button>
+            <button onClick="{{ cancelAction }}" style="width:100%;background:transparent;border:none;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:#7d6e63;cursor:pointer;margin-top:4px" style-hover="color:#15233a">إلغاء</button>
+          </div>
+        </sc-if>
+
+        <!-- Bill confirm -->
+        <sc-if value="{{ isBillConfirm }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out">
+            <!-- Bill ambiguity -->
+            <sc-if value="{{ isBillAmbiguous }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-bottom:12px">
+                <div style="font-size:12px;font-weight:700;color:#15233a;margin-bottom:10px;text-align:right">لديك فاتورتان — أيهما؟</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <button onClick="{{ selectBill1 }}" style="background:#f9f7f5;border:1.5px solid rgba(0,0,0,0.1);border-radius:9px;padding:11px 14px;font-family:'Cairo',sans-serif;font-size:13px;color:#15233a;cursor:pointer;text-align:right;display:flex;justify-content:space-between;align-items:center" style-hover="border-color:#15233a;background:#f0e8e0"><span>شركة الكهرباء — الحساب الرئيسي</span><span style="font-size:13px;font-weight:700">186 ر.س</span></button>
+                  <button onClick="{{ selectBill2 }}" style="background:#f9f7f5;border:1.5px solid rgba(0,0,0,0.1);border-radius:9px;padding:11px 14px;font-family:'Cairo',sans-serif;font-size:13px;color:#15233a;cursor:pointer;text-align:right;display:flex;justify-content:space-between;align-items:center" style-hover="border-color:#15233a;background:#f0e8e0"><span>شركة الكهرباء — الحساب الفرعي</span><span style="font-size:13px;font-weight:700">94 ر.س</span></button>
+                </div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isBillSelected }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px;font-weight:700;color:#15233a;margin-bottom:10px;text-align:right">تفاصيل الفاتورة</div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:13px;font-weight:600;color:#15233a">شركة الكهرباء السعودية</span><span style="font-size:11px;color:#7d6e63">الجهة</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:7px"><span style="font-size:15px;font-weight:700;color:#15233a">186.00 ر.س</span><span style="font-size:11px;color:#7d6e63">المبلغ</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:14px"><span style="font-size:12px;background:#fff0f0;color:#e84545;padding:3px 8px;border-radius:6px;font-weight:600">30 يونيو 2026</span><span style="font-size:11px;color:#7d6e63">الاستحقاق</span></div>
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ confirmBill }}" style="flex:1;background:#15233a;color:white;border:none;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#1d3460">تأكيد السداد</button>
+                <button onClick="{{ cancelAction }}" style="flex:1;background:transparent;color:#15233a;border:1.5px solid #15233a;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer" style-hover="background:#f5ede8">إلغاء</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- Card management -->
+        <sc-if value="{{ isCardFreeze }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out">
+            <div style="background:linear-gradient(135deg,#15233a,#2a4a78);border-radius:10px;padding:14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;color:white;position:relative">
+              <div><div style="font-size:12px;font-weight:800;opacity:0.8;margin-bottom:4px">VISA</div><div style="font-size:13px;font-weight:600;letter-spacing:2px">**** **** **** 4521</div><div style="font-size:10px;opacity:0.6;margin-top:4px">ائتمانية • حد متاح 8,500 ر.س</div></div>
+            </div>
+            <div style="font-size:11px;color:#7d6e63;background:#fff8f0;border-radius:8px;padding:9px;margin-bottom:12px;text-align:right;line-height:1.5">🔒 بعد التجميد لن يمكن إجراء أي معاملة. يمكن رفع التجميد فوراً من هنا.</div>
+            <div style="display:flex;gap:8px;flex-direction:column">
+              <div style="display:flex;gap:8px">
+                <button onClick="{{ confirmCard }}" style="flex:1;background:#e84545;color:white;border:none;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">🔒 تجميد الآن</button>
+                <button onClick="{{ cancelAction }}" style="flex:1;background:transparent;color:#15233a;border:1.5px solid #15233a;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer" style-hover="background:#f5ede8">إلغاء</button>
+              </div>
+              <button onClick="{{ handleCardReplace }}" style="width:100%;background:transparent;border:1px solid rgba(0,0,0,0.1);border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:12px;color:#7d6e63;cursor:pointer" style-hover="background:#f9f7f5">أو: طلب استبدال البطاقة</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Card unfrozen -->
+        <sc-if value="{{ isCardUnfreeze }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out">
+            <div style="background:linear-gradient(135deg,#15233a,#2a4a78);border-radius:10px;padding:14px;margin-bottom:12px;color:white;position:relative;overflow:hidden">
+              <div style="position:absolute;inset:0;background:rgba(255,100,100,0.18);display:flex;align-items:center;justify-content:center"><span style="font-size:38px;opacity:0.2">🔒</span></div>
+              <div><div style="font-size:12px;font-weight:800;opacity:0.8;margin-bottom:4px">VISA — مجمّدة</div><div style="font-size:13px;font-weight:600;letter-spacing:2px">**** **** **** 4521</div></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ confirmUnfreeze }}" style="flex:1;background:#3db557;color:white;border:none;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">🔓 رفع التجميد</button>
+              <button onClick="{{ cancelAction }}" style="flex:1;background:transparent;color:#15233a;border:1.5px solid #15233a;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer" style-hover="background:#f5ede8">إلغاء</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Savings -->
+        <sc-if value="{{ isSavings }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out">
+            <div style="background:linear-gradient(135deg,#0d1b2e,#1a3560);border-radius:10px;padding:16px;margin-bottom:12px;color:white">
+              <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-bottom:4px">برنامج الادخار — الإنماء</div>
+              <div style="font-size:32px;font-weight:800;line-height:1;margin-bottom:4px">2%</div>
+              <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:12px">عائد سنوي مضمون</div>
+              <div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:10px;display:flex;justify-content:space-between">
+                <span style="font-size:13px;font-weight:700">24.00 ر.س</span>
+                <span style="font-size:11px;opacity:0.7">العائد السنوي على 1,200 ر.س</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onClick="{{ confirmSavings }}" style="flex:1;background:#3db557;color:white;border:none;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">نعم، احوّل الآن ✓</button>
+              <button onClick="{{ cancelAction }}" style="flex:1;background:transparent;color:#15233a;border:1.5px solid #15233a;border-radius:9px;padding:10px;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer" style-hover="background:#f5ede8">لاحقاً</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Transactions -->
+        <sc-if value="{{ isTransactions }}" hint-placeholder-val="{{ false }}">
+          <div style="background:white;border-radius:12px;padding:14px;margin-top:4px;box-shadow:0 1px 4px rgba(0,0,0,0.06);animation:slideUp 0.3s ease-out" dir="rtl">
+            <div style="font-size:12px;font-weight:700;color:#15233a;margin-bottom:10px">آخر 5 معاملات</div>
+            <div style="display:flex;flex-direction:column;gap:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">-186 ر.س</div><div style="text-align:right"><div style="font-size:12px;font-weight:600">شركة الكهرباء</div><div style="font-size:10px;color:#7d6e63">25 يونيو</div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">-300 ر.س</div><div style="text-align:right"><div style="font-size:12px;font-weight:600">محمد سامي</div><div style="font-size:10px;color:#7d6e63">23 يونيو</div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#e84545">-540 ر.س</div><div style="text-align:right"><div style="font-size:12px;font-weight:600">مطعم شاورما الرياض</div><div style="font-size:10px;color:#7d6e63">21 يونيو</div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(0,0,0,0.05)"><div style="font-size:13px;font-weight:700;color:#3db557">+5,000 ر.س</div><div style="text-align:right"><div style="font-size:12px;font-weight:600">إيداع راتب</div><div style="font-size:10px;color:#7d6e63">20 يونيو</div></div></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><div style="font-size:13px;font-weight:700;color:#e84545">-1,200 ر.س</div><div style="text-align:right"><div style="font-size:12px;font-weight:600">هايبر بنده</div><div style="font-size:10px;color:#7d6e63">18 يونيو</div></div></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Digital Products -->
+        <sc-if value="{{ isDigitalProducts }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;animation:slideUp 0.3s ease-out">
+            <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)" dir="rtl">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;background:linear-gradient(135deg,#6b3fa0,#8b55c0);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;flex-shrink:0">✈</div><div><div style="font-size:13px;font-weight:700">بطاقة السفر الإنماء</div><div style="font-size:11px;color:#7d6e63">9 عملات دولية • بدون رسوم تحويل</div></div></div>
+              <button onClick="{{ applyTravelCard }}" style="width:100%;background:#6b3fa0;color:white;border:none;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">شحن البطاقة الآن</button>
+            </div>
+            <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)" dir="rtl">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;background:linear-gradient(135deg,#1a6b2e,#2d9147);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;flex-shrink:0">💼</div><div><div style="font-size:13px;font-weight:700">تمويل شخصي</div><div style="font-size:11px;color:#7d6e63">حتى 500,000 ر.س • متوافق مع الشريعة</div></div></div>
+              <button onClick="{{ applyFinancing }}" style="width:100%;background:#1a6b2e;color:white;border:none;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">تقديم طلب تمويل</button>
+            </div>
+            <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)" dir="rtl">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="width:38px;height:38px;background:linear-gradient(135deg,#15233a,#2a4a78);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:17px;flex-shrink:0">🏦</div><div><div style="font-size:13px;font-weight:700">فتح حساب فرعي</div><div style="font-size:11px;color:#7d6e63">أهداف ادخارية مخصصة</div></div></div>
+              <button onClick="{{ applySubAccount }}" style="width:100%;background:#15233a;color:white;border:none;border-radius:9px;padding:9px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:600;cursor:pointer">فتح حساب جديد</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- Quick action chips -->
+        <sc-if value="{{ showQuickActions }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-wrap:wrap;gap:7px;padding:6px 0;justify-content:flex-end" dir="rtl">
+            <button onClick="{{ handleBalance }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">💰 رصيدي</button>
+            <button onClick="{{ handleTransfer }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">↗ تحويل سريع</button>
+            <button onClick="{{ handleBill }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">📋 سداد فاتورة</button>
+            <button onClick="{{ handleCard }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">🔒 إدارة البطاقة</button>
+            <button onClick="{{ handleSavings }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">✨ فرصة ادخار</button>
+            <button onClick="{{ handleTransactions }}" style="background:white;border:1px solid rgba(0,0,0,0.12);border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:#15233a;cursor:pointer" style-hover="background:#f5ede8">📊 آخر المعاملات</button>
+            <button onClick="{{ handleDigitalProducts }}" style="background:#15233a;border:1px solid #15233a;border-radius:20px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;color:white;cursor:pointer" style-hover="background:#1d3460">🏦 منتجات رقمية</button>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <!-- Input bar -->
+      <div style="padding:11px 13px;border-top:1px solid rgba(0,0,0,0.07);background:white;display:flex;align-items:center;gap:8px;flex-shrink:0" dir="rtl">
+        <input value="{{ inputText }}" onInput="{{ handleInput }}" onKeyDown="{{ handleKeyDown }}" placeholder="اكتب رسالتك لبشرى..." style="flex:1;border:1px solid rgba(0,0,0,0.1);border-radius:20px;padding:9px 14px;font-family:'Cairo',sans-serif;font-size:13px;color:#15233a;outline:none;direction:rtl;background:#f9f7f5" style-focus="border-color:#15233a;background:white" />
+        <button onClick="{{ sendMessage }}" style="width:36px;height:36px;background:#15233a;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" style-hover="background:#1d3460">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+        </button>
+        <button onClick="{{ openVoice }}" style="width:36px;height:36px;background:#f5ede8;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0" style-hover="background:#ece0d6" title="وضع الصوت">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15233a" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    chatOpen: false, messages: [], inputText: '', isTyping: false,
+    activeFlow: null, billAmbiguous: true, billSelected: false,
+    proactiveVisible: false, otpTimer: 59,
+    voiceOpen: false, voicePhase: 'idle', voiceText: '', voiceCmd: null,
+    faceIdOpen: false, faceScanning: true, faceSuccess: false, faceIdTarget: null,
+    cardFrozen: false,
+  };
+  _otpInterval = null; _voiceTimer = null;
+
+  componentDidMount() { setTimeout(() => this.setState({ proactiveVisible: true }), 5000); }
+  componentWillUnmount() { if (this._otpInterval) clearInterval(this._otpInterval); if (this._voiceTimer) clearTimeout(this._voiceTimer); }
+
+  componentDidUpdate(pp, ps) {
+    const s = this.state;
+    if (ps.messages.length !== s.messages.length || ps.isTyping !== s.isTyping || ps.activeFlow !== s.activeFlow) {
+      const el = document.getElementById('bushra-msgs');
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+    if (s.activeFlow === 'otp-entry' && ps.activeFlow !== 'otp-entry') setTimeout(() => this._wireOTP(), 100);
+  }
+
+  _wireOTP() {
+    const ids = ['otp1','otp2','otp3','otp4','otp5','otp6'];
+    ids.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', e => { if (e.target.value && i < 5) { const n = document.getElementById(ids[i+1]); if(n) n.focus(); } });
+      el.addEventListener('keydown', e => { if (e.key==='Backspace' && !e.target.value && i>0) { const p = document.getElementById(ids[i-1]); if(p){p.value='';p.focus();} } });
+    });
+    const f = document.getElementById('otp1'); if(f) f.focus();
+    if (this._otpInterval) clearInterval(this._otpInterval);
+    this.setState({ otpTimer: 59 });
+    this._otpInterval = setInterval(() => {
+      this.setState(s => { if(s.otpTimer<=1){clearInterval(this._otpInterval);return{otpTimer:0};} return{otpTimer:s.otpTimer-1}; });
+    }, 1000);
+  }
+
+  get _now() { return new Date().toLocaleTimeString('ar-SA', { hour:'2-digit', minute:'2-digit' }); }
+
+  _msg(role, text) {
+    return { role, text, time: this._now,
+      justify: role==='user' ? 'flex-start' : 'flex-end',
+      bubbleBg: role==='user' ? '#15233a' : '#eee8e0',
+      textColor: role==='user' ? '#ffffff' : '#15233a',
+      bubbleRadius: role==='user' ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+    };
+  }
+
+  _userSay(text) { this.setState(s => ({ messages:[...s.messages, this._msg('user',text)], isTyping:true, activeFlow:null })); }
+
+  _botReply(text, flow, delay=1300) {
+    setTimeout(() => { this.setState(s => ({ messages:[...s.messages, this._msg('assistant',text)], isTyping:false, activeFlow:flow||null })); }, delay);
+  }
+
+  openChat() {
+    const fresh = this.state.messages.length === 0;
+    this.setState({ chatOpen:true, proactiveVisible:false });
+    if (fresh) setTimeout(() => { this.setState(s => ({ messages:[this._msg('assistant','مرحباً عبدالله! 👋\nأنا بشرى، مساعدتك الذكية في بنك الإنماء.\nيمكنني مساعدتك في التحويلات، الفواتير، البطاقات، والمنتجات المصرفية.\nبماذا أستطيع مساعدتك اليوم؟')] })); }, 320);
+  }
+  closeChat() { this.setState({ chatOpen:false }); }
+  toggleChat() { this.state.chatOpen ? this.closeChat() : this.openChat(); }
+  dismissProactive() { this.setState({ proactiveVisible:false }); }
+  resetChat() { this.setState({ messages:[], activeFlow:null, isTyping:false, inputText:'' }); this.openChat(); }
+  openSavingsProactive() { this.openChat(); setTimeout(() => { if (!this.state.isTyping) this.handleSavings(); }, 1000); }
+
+  // ── VOICE ──────────────────────────────────────────────
+  openVoice() { this.setState({ voiceOpen:true, voicePhase:'listening', voiceText:'جاري الاستماع…', voiceCmd:null }); }
+  stopVoice() {
+    if (this._voiceTimer) { clearTimeout(this._voiceTimer); this._voiceTimer=null; }
+    this.setState({ voiceOpen:false, voicePhase:'idle', voiceText:'' });
+  }
+
+  _runVoiceCmd(arabic) {
+    this.setState({ voicePhase:'processing', voiceText: arabic });
+    this._voiceTimer = setTimeout(() => {
+      this.stopVoice();
+      if (!this.state.chatOpen) this.openChat();
+      setTimeout(() => {
+        this._userSay(arabic);
+        this._routeText(arabic);
+      }, 400);
+    }, 1800);
+  }
+
+  voiceCmd0() { this._runVoiceCmd('حولي 300 ريال لمحمد'); }
+  voiceCmd1() { this._runVoiceCmd('ما رصيدي؟'); }
+  voiceCmd2() { this._runVoiceCmd('سددي فاتورة الكهرباء'); }
+  voiceCmd3() { this._runVoiceCmd('اجمّدي بطاقتي'); }
+  voiceCmd4() { this._runVoiceCmd('أخبريني عن فرص الادخار'); }
+
+  // ── FACE ID ─────────────────────────────────────────────
+  requestFaceId() {
+    this.setState({ isTyping:false, activeFlow:null, faceIdOpen:true, faceScanning:true, faceSuccess:false, faceIdTarget:'transfer' });
+  }
+  useFaceId() {
+    this.setState({ faceScanning:false, faceSuccess:true });
+    setTimeout(() => {
+      this.setState({ faceIdOpen:false, isTyping:true });
+      this._botReply('تم التحويل بنجاح بواسطة Face ID! ✅\n━━━━━━━━━━━━━━━\nالمبلغ: 300.00 ريال\nإلى: محمد سامي\nرقم المرجع: INM-2026-447821', null, 1200);
+    }, 1400);
+  }
+  skipFaceId() {
+    this.setState({ faceIdOpen:false, isTyping:true, activeFlow:null });
+    setTimeout(() => { this.setState(s => ({ messages:[...s.messages, this._msg('assistant','تم إرسال رمز OTP إلى جوالك ••30')], isTyping:false, activeFlow:'otp-entry' })); }, 900);
+  }
+
+  // ── FLOWS ──────────────────────────────────────────────
+  handleBalance() { if(this.state.isTyping)return; this._userSay('ما رصيدي؟'); this._botReply('بالطبع! هذه أرصدة حساباتك:','balance'); }
+  handleTransfer() { if(this.state.isTyping)return; this._userSay('حول 300 ريال لمحمد سامي'); this._botReply('وجدت محمد سامي في قائمة المستفيدين.\nراجع التفاصيل وأكّد بـ Face ID:','transfer-confirm'); }
+  handleBill() { if(this.state.isTyping)return; this._userSay('سددي فاتورة الكهرباء'); this.setState(s=>({billAmbiguous:true, billSelected:false})); this._botReply('وجدت فاتورتين لشركة الكهرباء. أيهما تريد سداده؟','bill-confirm'); }
+  handleCard() { if(this.state.isTyping)return; const frozen=this.state.cardFrozen; this._userSay(frozen?'ارفع تجميد بطاقتي':'اجمّدي بطاقتي'); this._botReply(frozen?'بطاقتك VISA مجمّدة حالياً. هل تريد رفع التجميد؟':'سأجمّد بطاقتك VISA *** 4521. هل أنت متأكد؟', frozen?'card-unfreeze':'card-freeze'); }
+  handleSavings() { if(this.state.isTyping)return; this._userSay('أخبريني عن فرص الادخار'); this._botReply('لاحظت أنك تحتفظ بحوالي 1,200 ريال شهرياً دون استثمار 📊\nبرنامج الادخار من الإنماء يمنحك 2% سنوياً. تحوّل الآن؟','savings'); }
+  handleTransactions() { if(this.state.isTyping)return; this._userSay('أرني آخر معاملاتي'); this._botReply('هذه آخر 5 معاملات:','transactions'); }
+  handleDigitalProducts() { if(this.state.isTyping)return; this._userSay('ما هي المنتجات الرقمية؟'); this._botReply('لديك 3 منتجات رقمية قد تناسبك 🏦','digital-products'); }
+
+  selectBill1() { this.setState({ billAmbiguous:false, billSelected:true }); }
+  selectBill2() { this.setState({ billAmbiguous:false, billSelected:true }); }
+
+  handleCardReplace() {
+    this.setState({ activeFlow:null });
+    this._userSay('طلب استبدال البطاقة');
+    this._botReply('سأبدأ طلب استبدال بطاقة VISA *** 4521.\n━━━━━━━━━━━━━━━\n📍 عنوان التوصيل الحالي:\nالرياض — حي النخيل، شارع المدينة\n\nهل تريد التوصيل لهذا العنوان؟', null);
+  }
+
+  requestOTP() {
+    this.setState({ isTyping:true, activeFlow:null });
+    setTimeout(() => { this.setState(s => ({ messages:[...s.messages, this._msg('assistant','تم إرسال رمز OTP إلى جوالك ••30')], isTyping:false, activeFlow:'otp-entry' })); }, 1000);
+  }
+
+  verifyOTP() {
+    const ids=['otp1','otp2','otp3','otp4','otp5','otp6'];
+    const otp=ids.map(id=>{const el=document.getElementById(id);return el?el.value:'';}).join('');
+    if (otp.length<6) { ids.forEach(id=>{const el=document.getElementById(id);if(el){el.style.animation='otpShake 0.4s ease';el.style.borderColor='#e84545';setTimeout(()=>{el.style.animation='';el.style.borderColor='';},500);}}); return; }
+    if (this._otpInterval) clearInterval(this._otpInterval);
+    this.setState({ isTyping:true, activeFlow:null });
+    this._botReply('تم التحويل بنجاح! ✅\n━━━━━━━━━━━━━━━\nالمبلغ: 300.00 ريال\nإلى: محمد سامي\nرقم المرجع: INM-2026-447821', null, 1300);
+  }
+
+  _confirm(type) {
+    this.setState({ isTyping:true, activeFlow:null });
+    const replies = {
+      bill: 'تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\nشركة الكهرباء السعودية\nالمبلغ: 186.00 ريال\nرقم SADAD: SADAD-2026-889034',
+      card: 'تم تجميد البطاقة! 🔒\n━━━━━━━━━━━━━━━\nVISA *** 4521\nيمكنك رفع التجميد بأمر صوتي "ارفع تجميد بطاقتي"',
+      unfreeze: 'تم رفع التجميد! 🔓\n━━━━━━━━━━━━━━━\nVISA *** 4521 نشطة الآن\nيمكنك استخدامها فوراً.',
+      savings: 'تم التحويل لحساب التوفير! ✅\n━━━━━━━━━━━━━━━\n1,200 ريال → برنامج الادخار الإنماء\nالعائد السنوي: 24.00 ريال 🎉',
+    };
+    if (type==='card') this.setState({ cardFrozen:true });
+    if (type==='unfreeze') this.setState({ cardFrozen:false });
+    this._botReply(replies[type], null, 1200);
+  }
+
+  applyTravelCard() { this.setState({activeFlow:null}); this._userSay('أريد شحن بطاقة السفر'); this._botReply('بطاقة السفر الإنماء جاهزة ✈\nالرصيد الحالي: $240.00\nسعر الصرف: 1 USD = 3.75 ريال\n\nكم تريد شحنها؟ (بالريال)', null); }
+  applyFinancing() { this.setState({activeFlow:null}); this._userSay('أريد التمويل الشخصي'); this._botReply('مؤهّل للتمويل الشخصي 💼\nالحد الأقصى: 500,000 ريال\nمدة: حتى 60 شهراً\nنسبة ربح تنافسية متوافقة مع الشريعة\n\nأكمل الطلب؟ سيستغرق 3 دقائق فقط.', null); }
+  applySubAccount() { this.setState({activeFlow:null}); this._userSay('أريد فتح حساب فرعي'); this._botReply('فتح حساب فرعي جديد 🏦\nما هدف الحساب؟\n🌴 إجازات   📚 تعليم   🚨 طوارئ   🏠 مخصص\n\nاذكر الهدف وسأنشئه فوراً!', null); }
+
+  cancelAction() {
+    if (this._otpInterval) clearInterval(this._otpInterval);
+    this.setState(s => ({ messages:[...s.messages, this._msg('assistant','تم الإلغاء. هل هناك شيء آخر؟')], activeFlow:null }));
+  }
+
+  _routeText(t) {
+    const lower = t.toLowerCase();
+    if (lower.includes('رصيد') || lower.includes('حساب')) { this._botReply('بالطبع! هذه أرصدة حساباتك:','balance'); return; }
+    if (lower.includes('تحويل') || lower.includes('حول') || lower.includes('ريال')) { this._botReply('راجع التفاصيل وأكّد بـ Face ID:','transfer-confirm'); return; }
+    if (lower.includes('فاتورة') || lower.includes('كهرباء') || lower.includes('سداد')) { this.setState({billAmbiguous:true,billSelected:false}); this._botReply('وجدت فاتورتين لشركة الكهرباء. أيهما تريد؟','bill-confirm'); return; }
+    if (lower.includes('بطاقة') || lower.includes('تجميد') || lower.includes('اجمّد')) { this._botReply('سأجمّد بطاقتك VISA *** 4521. هل أنت متأكد؟','card-freeze'); return; }
+    if (lower.includes('ادخار') || lower.includes('توفير') || lower.includes('استثمار') || lower.includes('فرص')) { this._botReply('لاحظت فرصة ادخار مناسبة 📊','savings'); return; }
+    if (lower.includes('معاملات') || lower.includes('عمليات')) { this._botReply('هذه آخر معاملاتك:','transactions'); return; }
+    if (lower.includes('منتج') || lower.includes('سفر') || lower.includes('تمويل')) { this._botReply('هذه المنتجات الرقمية المتاحة:','digital-products'); return; }
+    this._botReply('يمكنني مساعدتك في:\n• التحويلات • الفواتير • الرصيد\n• البطاقات • المنتجات الرقمية\nجرب الاختصارات أدناه أو الضغط على 🎤 للتحدث.', null);
+  }
+
+  handleInput(e) { this.setState({ inputText: e.target.value }); }
+  handleKeyDown(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); this.sendMessage(); } }
+  sendMessage() {
+    const text = this.state.inputText.trim();
+    if (!text || this.state.isTyping) return;
+    this.setState({ inputText:'' });
+    this._userSay(text);
+    this._routeText(text);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const vPhase = s.voicePhase;
+    return {
+      chatOpen: s.chatOpen, messages: s.messages, inputText: s.inputText,
+      isTyping: s.isTyping, proactiveVisible: s.proactiveVisible, otpTimer: s.otpTimer,
+      showQuickActions: s.messages.length<=1 && !s.isTyping,
+      isBalance: s.activeFlow==='balance',
+      isTransferConfirm: s.activeFlow==='transfer-confirm',
+      isOTPEntry: s.activeFlow==='otp-entry',
+      isBillConfirm: s.activeFlow==='bill-confirm',
+      isBillAmbiguous: s.billAmbiguous,
+      isBillSelected: s.billSelected,
+      isCardFreeze: s.activeFlow==='card-freeze',
+      isCardUnfreeze: s.activeFlow==='card-unfreeze',
+      isSavings: s.activeFlow==='savings',
+      isTransactions: s.activeFlow==='transactions',
+      isDigitalProducts: s.activeFlow==='digital-products',
+      // Voice
+      voiceOpen: s.voiceOpen,
+      voiceStatusLabel: vPhase==='listening' ? 'جاري الاستماع…' : vPhase==='processing' ? 'جاري المعالجة…' : '',
+      voiceText: s.voiceText,
+      waveOpacity: vPhase==='listening' ? '1' : '0.3',
+      // Face ID
+      faceIdOpen: s.faceIdOpen, faceScanning: s.faceScanning, faceSuccess: s.faceSuccess,
+      faceIdTitle: 'تأكيد الهوية',
+      faceIdSubtitle: s.faceSuccess ? 'تمت المصادقة بنجاح ✓' : 'انظر إلى الكاميرا للتحقق من هويتك',
+      // Handlers
+      toggleChat: () => this.toggleChat(), closeChat: () => this.closeChat(),
+      resetChat: () => this.resetChat(), dismissProactive: () => this.dismissProactive(),
+      openSavingsProactive: () => this.openSavingsProactive(),
+      openVoice: () => this.openVoice(), stopVoice: () => this.stopVoice(),
+      voiceCmd0: () => this.voiceCmd0(), voiceCmd1: () => this.voiceCmd1(),
+      voiceCmd2: () => this.voiceCmd2(), voiceCmd3: () => this.voiceCmd3(),
+      voiceCmd4: () => this.voiceCmd4(),
+      requestFaceId: () => this.requestFaceId(), useFaceId: () => this.useFaceId(),
+      skipFaceId: () => this.skipFaceId(),
+      handleBalance: () => this.handleBalance(), handleTransfer: () => this.handleTransfer(),
+      handleBill: () => this.handleBill(), handleCard: () => this.handleCard(),
+      handleSavings: () => this.handleSavings(), handleTransactions: () => this.handleTransactions(),
+      handleDigitalProducts: () => this.handleDigitalProducts(),
+      selectBill1: () => this.selectBill1(), selectBill2: () => this.selectBill2(),
+      handleCardReplace: () => this.handleCardReplace(),
+      requestOTP: () => this.requestOTP(), verifyOTP: () => this.verifyOTP(),
+      confirmBill: () => this._confirm('bill'), confirmCard: () => this._confirm('card'),
+      confirmUnfreeze: () => this._confirm('unfreeze'), confirmSavings: () => this._confirm('savings'),
+      applyTravelCard: () => this.applyTravelCard(), applyFinancing: () => this.applyFinancing(),
+      applySubAccount: () => this.applySubAccount(),
+      cancelAction: () => this.cancelAction(),
+      handleInput: e => this.handleInput(e), handleKeyDown: e => this.handleKeyDown(e),
+      sendMessage: () => this.sendMessage(),
+    };
+  }
+}
+</script>
+</body>
+</html>

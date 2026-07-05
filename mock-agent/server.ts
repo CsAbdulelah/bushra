@@ -1,0 +1,273 @@
+/**
+ * Bushra Mock Agent — stand-in for the LLM/Agent service until colleagues ship theirs.
+ *
+ * Contract (must match lib/bushra/events.ts):
+ *   POST /chat            → SSE stream of BushraEvents
+ *   POST /confirmations   → 200; resumes a paused turn
+ *   GET  /health          → { ok: true }
+ *
+ * Run with:  bun run mock-agent/server.ts   (default port 8787)
+ */
+
+import type { BushraEvent } from "@/lib/bushra/events";
+
+const PORT = Number(process.env.PORT ?? 8787);
+
+type PendingResolver = (payload: { ok: boolean; otp?: string; reason?: string }) => void;
+
+const pending = new Map<string, PendingResolver>();
+
+const enc = new TextEncoder();
+
+function frame(evt: BushraEvent): Uint8Array {
+  return enc.encode(`data: ${JSON.stringify(evt)}\n\n`);
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function tokenize(text: string, push: (evt: BushraEvent) => void, chunk = 6, delay = 25) {
+  const messageId = crypto.randomUUID();
+  push({ type: "message_start", messageId, role: "assistant" });
+  for (let i = 0; i < text.length; i += chunk) {
+    push({ type: "token", text: text.slice(i, i + chunk) });
+    await sleep(delay);
+  }
+  push({ type: "message_end", messageId });
+}
+
+async function waitForConfirmation(promptId: string): Promise<{ ok: boolean; otp?: string; reason?: string }> {
+  return new Promise((resolve) => {
+    pending.set(promptId, (payload) => {
+      pending.delete(promptId);
+      resolve(payload);
+    });
+  });
+}
+
+// ── Scripted flows ────────────────────────────────────────────
+
+async function runFlow(text: string, push: (evt: BushraEvent) => void): Promise<void> {
+  const t = text.toLowerCase();
+
+  if (matches(t, ["رصيد", "حساب", "balance"])) {
+    await tokenize("بالطبع! هذه أرصدة حساباتك:", push);
+    push({ type: "flow", flow: "balance" });
+    return;
+  }
+
+  if (matches(t, ["حول", "تحويل", "300", "محمد"]) && !t.includes("أكد")) {
+    await tokenize("وجدت محمد سامي في قائمة المستفيدين.\nراجع التفاصيل وأكّد بـ Face ID:", push);
+    push({ type: "flow", flow: "transfer-confirm", context: { amount: 300, recipient: "محمد سامي" } });
+    return;
+  }
+
+  if (matches(t, ["أكد التحويل", "face id"])) {
+    const promptId = crypto.randomUUID();
+    push({ type: "requires_confirmation", kind: "face_id", promptId, context: { amount: 300, recipient: "محمد سامي" } });
+    const answer = await waitForConfirmation(promptId);
+    if (!answer.ok) {
+      // Face ID declined → offer OTP.
+      const otpPrompt = crypto.randomUUID();
+      await tokenize("تم إرسال رمز OTP إلى جوالك ••30", push);
+      push({ type: "flow", flow: "otp-entry" });
+      push({ type: "requires_confirmation", kind: "otp", promptId: otpPrompt, context: { otpMaskedPhone: "••30" } });
+      const otpAnswer = await waitForConfirmation(otpPrompt);
+      if (!otpAnswer.ok) {
+        await tokenize("تم الإلغاء. هل هناك شيء آخر؟", push);
+        push({ type: "flow", flow: null });
+        return;
+      }
+    }
+    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "transfer", args: { amount: 300, recipient: "محمد سامي" } });
+    await sleep(400);
+    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true, summary: "transfer completed" });
+    await tokenize(
+      "تم التحويل بنجاح! ✅\n━━━━━━━━━━━━━━━\nالمبلغ: 300.00 ريال\nإلى: محمد سامي\nرقم المرجع: INM-2026-447821",
+      push,
+    );
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  if (matches(t, ["فاتورة", "كهرباء", "سداد"]) && !t.includes("أكد")) {
+    await tokenize("وجدت فاتورتين لشركة الكهرباء. أيهما تريد سداده؟", push);
+    push({
+      type: "flow",
+      flow: "bill-confirm",
+      context: {
+        options: [
+          { id: "bill-main", label: "شركة الكهرباء — الحساب الرئيسي", amount: 186 },
+          { id: "bill-sub", label: "شركة الكهرباء — الحساب الفرعي", amount: 94 },
+        ],
+      },
+    });
+    return;
+  }
+
+  if (matches(t, ["سدد شركة", "الرئيسي"])) {
+    push({
+      type: "flow",
+      flow: "bill-confirm",
+      context: { selected: { biller: "شركة الكهرباء السعودية", amount: 186, due: "30 يونيو 2026" } },
+    });
+    await tokenize("تفاصيل الفاتورة:", push);
+    return;
+  }
+
+  if (matches(t, ["أكد سداد"])) {
+    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "pay_bill", args: { billerId: "bill-main", amount: 186 } });
+    await sleep(400);
+    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    await tokenize(
+      "تم سداد الفاتورة بنجاح! ✅\n━━━━━━━━━━━━━━━\nشركة الكهرباء السعودية\nالمبلغ: 186.00 ريال\nرقم SADAD: SADAD-2026-889034",
+      push,
+    );
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  if (matches(t, ["اجمّد", "تجميد", "بطاقتي"]) && !t.includes("أكد") && !t.includes("ارفع")) {
+    await tokenize("سأجمّد بطاقتك VISA *** 4521. هل أنت متأكد؟", push);
+    push({ type: "flow", flow: "card-freeze" });
+    return;
+  }
+
+  if (matches(t, ["أكد تجميد"])) {
+    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "freeze_card", args: { cardId: "card-visa" } });
+    await sleep(300);
+    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    await tokenize(
+      "تم تجميد البطاقة! 🔒\n━━━━━━━━━━━━━━━\nVISA *** 4521\nيمكنك رفع التجميد بأمر صوتي \"ارفع تجميد بطاقتي\"",
+      push,
+    );
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  if (matches(t, ["ارفع التجميد", "رفع التجميد"])) {
+    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "unfreeze_card", args: { cardId: "card-visa" } });
+    await sleep(300);
+    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    await tokenize("تم رفع التجميد! 🔓\n━━━━━━━━━━━━━━━\nVISA *** 4521 نشطة الآن.", push);
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  if (matches(t, ["ادخار", "توفير", "فرص"])) {
+    await tokenize(
+      "لاحظت أنك تحتفظ بحوالي 1,200 ريال شهرياً دون استثمار 📊\nبرنامج الادخار من الإنماء يمنحك 2% سنوياً. تحوّل الآن؟",
+      push,
+    );
+    push({ type: "flow", flow: "savings", context: { rate: 2, monthly: 1200, yearly: 24 } });
+    return;
+  }
+
+  if (matches(t, ["حوّل الآن للادخار", "نعم، حوّل"])) {
+    push({ type: "tool_call", toolCallId: crypto.randomUUID(), name: "open_savings", args: { amount: 1200 } });
+    await sleep(300);
+    push({ type: "tool_result", toolCallId: crypto.randomUUID(), ok: true });
+    await tokenize(
+      "تم التحويل لحساب التوفير! ✅\n━━━━━━━━━━━━━━━\n1,200 ريال → برنامج الادخار الإنماء\nالعائد السنوي: 24.00 ريال 🎉",
+      push,
+    );
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  if (matches(t, ["معاملات", "أرني"])) {
+    await tokenize("هذه آخر 5 معاملات:", push);
+    push({ type: "flow", flow: "transactions" });
+    return;
+  }
+
+  if (matches(t, ["منتجات", "منتج"])) {
+    await tokenize("لديك 3 منتجات رقمية قد تناسبك 🏦", push);
+    push({ type: "flow", flow: "digital-products" });
+    return;
+  }
+
+  if (matches(t, ["إلغاء"])) {
+    await tokenize("تم الإلغاء. هل هناك شيء آخر؟", push);
+    push({ type: "flow", flow: null });
+    return;
+  }
+
+  await tokenize(
+    "يمكنني مساعدتك في:\n• التحويلات • الفواتير • الرصيد\n• البطاقات • المنتجات الرقمية\nجرّب الاختصارات أدناه أو الضغط على 🎤 للتحدث.",
+    push,
+  );
+}
+
+function matches(text: string, keywords: string[]): boolean {
+  return keywords.some((k) => text.includes(k));
+}
+
+function corsHeaders(): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+// ── HTTP server ────────────────────────────────────────────────
+
+Bun.serve({
+  port: PORT,
+  async fetch(req) {
+    const url = new URL(req.url);
+
+    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders() });
+
+    if (url.pathname === "/health") {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders() },
+      });
+    }
+
+    if (url.pathname === "/confirmations" && req.method === "POST") {
+      const body = (await req.json().catch(() => null)) as
+        | { sessionId?: string; promptId: string; ok: boolean; otp?: string; reason?: string }
+        | null;
+      if (!body?.promptId) return new Response("bad request", { status: 400, headers: corsHeaders() });
+      const resolver = pending.get(body.promptId);
+      if (resolver) resolver({ ok: body.ok, otp: body.otp, reason: body.reason });
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json", ...corsHeaders() },
+      });
+    }
+
+    if (url.pathname === "/chat" && req.method === "POST") {
+      const body = (await req.json().catch(() => null)) as { sessionId: string; text: string } | null;
+      if (!body?.text) return new Response("bad request", { status: 400, headers: corsHeaders() });
+
+      const stream = new ReadableStream<Uint8Array>({
+        async start(controller) {
+          const push = (evt: BushraEvent) => controller.enqueue(frame(evt));
+          push({ type: "session", sessionId: body.sessionId });
+          try {
+            await runFlow(body.text, push);
+          } catch (err) {
+            push({ type: "error", message: err instanceof Error ? err.message : "flow error", recoverable: false });
+          } finally {
+            push({ type: "done" });
+            controller.close();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          ...corsHeaders(),
+        },
+      });
+    }
+
+    return new Response("not found", { status: 404, headers: corsHeaders() });
+  },
+});
+
+console.log(`[mock-agent] listening on http://localhost:${PORT}`);
