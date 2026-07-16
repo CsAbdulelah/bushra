@@ -11,6 +11,7 @@ import {
 } from "react";
 import { BushraSession } from "@/lib/bushra/session";
 import { AudioChunkPlayer } from "@/lib/bushra/audio-player";
+import { speakReply } from "@/lib/bushra/tts";
 import type { BushraEvent, FlowId } from "@/lib/bushra/events";
 
 export type ChatRole = "user" | "assistant";
@@ -118,10 +119,14 @@ export function BushraProvider({ children }: { children: ReactNode }) {
 
   // Wire session events to state.
   useEffect(() => {
+    // Accumulator so message_end can hand the whole assistant reply to TTS.
+    const buffers = new Map<string, string>();
+
     const off = session.on((evt: BushraEvent) => {
       switch (evt.type) {
         case "message_start":
           setIsStreaming(true);
+          buffers.set(evt.messageId, "");
           setMessages((prev) => [...prev, { id: evt.messageId, role: "assistant", text: "", time: nowLabel() }]);
           break;
         case "token":
@@ -129,12 +134,17 @@ export function BushraProvider({ children }: { children: ReactNode }) {
             if (prev.length === 0) return prev;
             const last = prev[prev.length - 1];
             if (last.role !== "assistant") return prev;
+            buffers.set(last.id, (buffers.get(last.id) ?? "") + evt.text);
             return [...prev.slice(0, -1), { ...last, text: last.text + evt.text }];
           });
           break;
-        case "message_end":
+        case "message_end": {
           setIsStreaming(false);
+          const full = buffers.get(evt.messageId);
+          buffers.delete(evt.messageId);
+          if (full && full.trim()) void speakReply(full);
           break;
+        }
         case "flow":
           setActiveFlow(evt.flow);
           setFlowContext(evt.context);

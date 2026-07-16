@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { VoiceCapture } from "@/lib/bushra/voice";
 import { useBushra } from "@/hooks/useBushra";
-import { clientConfig } from "@/lib/config";
 
 /**
  * Wires VoiceCapture to the Bushra session:
@@ -19,27 +18,29 @@ export function useVoice() {
   const captureRef = useRef<VoiceCapture | null>(null);
 
   useEffect(() => {
-    if (!b.voiceOpen) return;
-    if (!clientConfig.asrUrl) return;
+    if (!b.voiceOpen) {
+      // Modal was closed by user (X) or by a final transcript. Trigger a stop
+      // on the current capture so the recorded audio uploads and yields a
+      // `final` event that we still catch (listeners stay subscribed).
+      captureRef.current?.stop();
+      return;
+    }
 
     const cap = new VoiceCapture();
     captureRef.current = cap;
-    const off = cap.on((evt) => {
+    cap.on((evt) => {
       if (evt.type === "phase") b.setVoicePhase(evt.phase);
       else if (evt.type === "partial") b.setVoiceText(evt.text);
       else if (evt.type === "final") {
         b.setVoiceText(evt.text);
         b.stopVoice();
         b.send(evt.text);
+      } else if (evt.type === "error") {
+        b.setVoiceText("");
+        b.stopVoice();
       }
     });
     cap.start();
-
-    return () => {
-      off();
-      cap.stop();
-      captureRef.current = null;
-    };
   }, [b.voiceOpen, b]);
 
   /** Called by the demo command chips inside the voice modal. */

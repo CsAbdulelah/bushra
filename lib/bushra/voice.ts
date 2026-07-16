@@ -1,13 +1,15 @@
 import { clientConfig } from "@/lib/config";
 
 /**
- * Voice capture + streaming to the ASR service.
+ * Voice capture — REST flow against the Python backend.
  *
- * The ASR contract is intentionally minimal: open a WebSocket to
- * NEXT_PUBLIC_ASR_URL, stream binary audio chunks up, receive JSON
- * `{ type: 'partial'|'final', text: string }` frames down.
+ * The Python /transcribe endpoint accepts a whole audio blob (webm/mp3/wav/m4a)
+ * and returns the Arabic transcript. We record with MediaRecorder, POST the
+ * blob on stop(), and emit a single `final` transcript.
  *
- * Final transcript is folded into the BushraSession by the caller.
+ * A WebSocket-based ASR is still supported when NEXT_PUBLIC_ASR_URL is set —
+ * that path streams `partial`/`final` frames. When it's not set we default to
+ * the same-origin `/api/agent/transcribe` proxy.
  */
 
 export type VoiceEvent =
@@ -22,7 +24,11 @@ export class VoiceCapture {
   private ws: WebSocket | null = null;
   private stream: MediaStream | null = null;
   private recorder: MediaRecorder | null = null;
+  private chunks: Blob[] = [];
   private listeners = new Set<VoiceListener>();
+  private mode: "rest" | "ws" = "rest";
+  /** Endpoint for the REST fallback (defaults to same-origin adapter). */
+  private transcribeUrl = `${clientConfig.agentUrl}/transcribe`;
 
   on(fn: VoiceListener) {
     this.listeners.add(fn);
@@ -34,11 +40,6 @@ export class VoiceCapture {
   }
 
   async start(): Promise<void> {
-    if (!clientConfig.asrUrl) {
-      this.emit({ type: "error", message: "NEXT_PUBLIC_ASR_URL not configured" });
-      return;
-    }
-
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
@@ -49,9 +50,56 @@ export class VoiceCapture {
       return;
     }
 
+    if (clientConfig.asrUrl) {
+      this.mode = "ws";
+      this.startWebSocket();
+    } else {
+      this.mode = "rest";
+      this.startRecorder();
+    }
+  }
+
+  private startRecorder() {
+    const rec = new MediaRecorder(this.stream!, { mimeType: "audio/webm;codecs=opus" });
+    this.chunks = [];
+    rec.ondataavailable = (e) => {
+      if (e.data.size > 0) this.chunks.push(e.data);
+    };
+    rec.onstart = () => this.emit({ type: "phase", phase: "listening" });
+    rec.onstop = () => this.uploadAndTranscribe();
+    rec.start();
+    this.recorder = rec;
+  }
+
+  private async uploadAndTranscribe() {
+    this.emit({ type: "phase", phase: "processing" });
+    if (this.chunks.length === 0) {
+      this.emit({ type: "phase", phase: "idle" });
+      return;
+    }
+    const blob = new Blob(this.chunks, { type: "audio/webm" });
+    this.chunks = [];
+    try {
+      const form = new FormData();
+      form.append("file", blob, "audio.webm");
+      const res = await fetch(this.transcribeUrl, { method: "POST", body: form });
+      if (!res.ok) throw new Error(`transcribe ${res.status}`);
+      const data = (await res.json()) as { text?: string };
+      const text = (data.text ?? "").trim();
+      if (text) this.emit({ type: "final", text });
+    } catch (err) {
+      this.emit({
+        type: "error",
+        message: err instanceof Error ? err.message : "transcribe failed",
+      });
+    } finally {
+      this.emit({ type: "phase", phase: "idle" });
+    }
+  }
+
+  private startWebSocket() {
     this.ws = new WebSocket(clientConfig.asrUrl);
     this.ws.binaryType = "arraybuffer";
-
     this.ws.onopen = () => {
       this.emit({ type: "phase", phase: "listening" });
       const rec = new MediaRecorder(this.stream!, { mimeType: "audio/webm;codecs=opus" });
@@ -63,7 +111,6 @@ export class VoiceCapture {
       rec.start(250);
       this.recorder = rec;
     };
-
     this.ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(typeof e.data === "string" ? e.data : "") as VoiceEvent;
@@ -72,18 +119,22 @@ export class VoiceCapture {
         /* ignore malformed */
       }
     };
-
     this.ws.onerror = () => this.emit({ type: "error", message: "asr socket error" });
     this.ws.onclose = () => this.emit({ type: "phase", phase: "idle" });
   }
 
   stop(): void {
-    this.emit({ type: "phase", phase: "processing" });
-    this.recorder?.stop();
+    if (this.mode === "rest") {
+      // Recorder.onstop will fire uploadAndTranscribe; keep the mic open until then.
+      try { this.recorder?.stop(); } catch { /* ignore */ }
+    } else {
+      this.emit({ type: "phase", phase: "processing" });
+      try { this.recorder?.stop(); } catch { /* ignore */ }
+      this.ws?.close();
+      this.ws = null;
+    }
     this.recorder = null;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
-    this.ws?.close();
-    this.ws = null;
   }
 }

@@ -81,11 +81,22 @@ export class BushraSession {
   }
 
   async confirm(payload: ConfirmationPayload): Promise<void> {
+    // The confirmations adapter streams the follow-up assistant reply back as
+    // SSE (same envelope as /chat), so we consume it the same way.
+    this.cancel();
+    const abort = new AbortController();
+    this.abort = abort;
+
+    let res: Response;
     try {
-      await fetch(`${clientConfig.agentUrl}/confirmations`, {
+      res = await fetch(`${clientConfig.agentUrl}/confirmations`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
         body: JSON.stringify({ sessionId: this.sessionId, ...payload }),
+        signal: abort.signal,
       });
     } catch (err) {
       this.emit({
@@ -93,7 +104,25 @@ export class BushraSession {
         message: err instanceof Error ? err.message : "confirm failed",
         recoverable: true,
       });
+      return;
     }
+
+    if (!res.ok || !res.body) {
+      // Some backends (e.g. real agents that resume on the still-open /chat
+      // stream) return 200 empty. Treat that as success and stay quiet.
+      if (res.ok) return;
+      this.emit({
+        type: "error",
+        message: `confirm returned ${res.status}`,
+        recoverable: false,
+      });
+      return;
+    }
+
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("text/event-stream")) return; // non-streaming backend
+
+    await this.consumeStream(res.body, abort.signal);
   }
 
   private async consumeStream(body: ReadableStream<Uint8Array>, signal: AbortSignal) {
