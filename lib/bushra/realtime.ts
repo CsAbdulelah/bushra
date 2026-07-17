@@ -77,7 +77,18 @@ export class RealtimeVoice {
         audioEl.srcObject = e.streams[0];
       };
 
-      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // echoCancellation + noiseSuppression + autoGainControl are critical:
+      // without them the mic re-captures Bushra's own voice and the model
+      // ends up talking over/repeating itself.
+      const mic = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+          sampleRate: 24000,
+        },
+      });
       this.mic = mic;
       for (const track of mic.getTracks()) pc.addTrack(track, mic);
 
