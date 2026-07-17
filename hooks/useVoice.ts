@@ -11,45 +11,55 @@ import type { FlowId } from "@/lib/bushra/events";
  * model are routed to the Python backend and their results are:
  *   • fed back into the conversation so the model speaks them, and
  *   • dispatched as flow-card + dashboard-refresh events for the UI.
+ *
+ * IMPORTANT: the effect below depends ONLY on `voiceOpen`. Never add the
+ * `b` context object to the dep array — its reference changes on every
+ * render, which would create a fresh RealtimeVoice on every keystroke
+ * and result in overlapping sessions (heard as repeated replies + 409s
+ * from OpenAI's realtime/calls endpoint).
  */
 export function useVoice() {
   const b = useBushra();
+  const bRef = useRef(b);
+  bRef.current = b;
   const rtRef = useRef<RealtimeVoice | null>(null);
 
   useEffect(() => {
+    const b = bRef.current;
     if (!b.voiceOpen) {
       rtRef.current?.stop();
       rtRef.current = null;
       return;
     }
+    // Guard against re-entry: if a session already exists, don't spawn a second.
+    if (rtRef.current) return;
 
     const rt = new RealtimeVoice();
     rtRef.current = rt;
 
     rt.on((evt) => {
+      const cur = bRef.current;
       switch (evt.type) {
         case "status":
           if (evt.status === "connecting") {
-            b.setVoicePhase("processing");
-            b.setVoiceText("جاري الاتصال…");
+            cur.setVoicePhase("processing");
+            cur.setVoiceText("جاري الاتصال…");
           } else if (evt.status === "listening") {
-            b.setVoicePhase("listening");
-            if (!b.voiceText) b.setVoiceText("تكلّم الآن");
+            cur.setVoicePhase("listening");
+            if (!cur.voiceText) cur.setVoiceText("تكلّم الآن");
           } else if (evt.status === "responding") {
-            b.setVoicePhase("processing");
+            cur.setVoicePhase("processing");
           } else if (evt.status === "error") {
-            b.setVoicePhase("idle");
+            cur.setVoicePhase("idle");
           }
           break;
         case "user_transcript":
-          if (evt.text.trim()) b.setVoiceText(evt.text);
+          if (evt.text.trim()) cur.setVoiceText(evt.text);
           break;
         case "assistant_transcript":
-          if (evt.text.trim()) b.setVoiceText(evt.text);
+          if (evt.text.trim()) cur.setVoiceText(evt.text);
           break;
         case "flow":
-          // Flow card driven by the voice pipeline. Emit through the global
-          // event bus so BushraProvider (which owns activeFlow) picks it up.
           window.dispatchEvent(
             new CustomEvent("bushra:flow", {
               detail: { flowId: evt.flowId as FlowId | null, flowContext: evt.flowContext },
@@ -57,11 +67,10 @@ export function useVoice() {
           );
           break;
         case "bank_action_completed":
-          // Tell useLiveBank to re-fetch the customer summary.
           window.dispatchEvent(new CustomEvent("bushra:bank-refresh"));
           break;
         case "error":
-          b.setVoiceText(`⚠️ ${evt.message}`);
+          cur.setVoiceText(`⚠️ ${evt.message}`);
           break;
       }
     });
@@ -69,8 +78,10 @@ export function useVoice() {
     rt.start();
     return () => {
       rt.stop();
+      rtRef.current = null;
     };
-  }, [b.voiceOpen, b]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [b.voiceOpen]);
 
   /** Kept for the demo command chips inside the voice modal. */
   const runDemoCommand = useCallback(
