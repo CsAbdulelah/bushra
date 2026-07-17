@@ -1,6 +1,9 @@
-import { beneficiaries } from "@/lib/bank/fixtures";
+"use client";
+
+import { useLiveBank } from "@/hooks/useLiveBank";
 
 export function BeneficiariesRow() {
+  const { beneficiaries } = useLiveBank();
   return (
     <section className="rounded-2xl bg-white p-5 shadow-card">
       <div className="mb-2 flex items-center justify-between">
