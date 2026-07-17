@@ -128,6 +128,13 @@ export class RealtimeVoice {
     this.dc.send(JSON.stringify(payload));
   }
 
+  /** Enable/disable the local mic track to stop speaker bleed becoming input. */
+  private setMicEnabled(enabled: boolean): void {
+    this.mic?.getAudioTracks().forEach((t) => {
+      t.enabled = enabled;
+    });
+  }
+
   private handleEvent(raw: unknown): void {
     if (typeof raw !== "string") return;
     let evt: Record<string, unknown>;
@@ -143,10 +150,18 @@ export class RealtimeVoice {
         this.emit({ type: "status", status: "listening" });
         break;
       case "response.audio.delta":
+        // Mute the mic while Bushra is speaking. This prevents the speaker
+        // output from bleeding back into the mic and being treated as new
+        // user input — the classic echo-loop cause.
+        this.setMicEnabled(false);
         this.emit({ type: "status", status: "responding" });
         break;
       case "response.done":
+        this.setMicEnabled(true);
         this.emit({ type: "status", status: "listening" });
+        break;
+      case "response.audio.done":
+        this.setMicEnabled(true);
         break;
       case "conversation.item.input_audio_transcription.completed": {
         const transcript = (evt as { transcript?: string }).transcript;
