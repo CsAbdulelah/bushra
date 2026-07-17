@@ -125,9 +125,21 @@ export function mapConfirmation(c: PythonConfirmation): {
 
   if (c.type === "bill_payment_confirmation" && c.payment_summary) {
     const s = c.payment_summary as Record<string, unknown>;
-    const amount = num(s.amount);
-    const biller = str(s.biller_ar) ?? str(s.biller) ?? "";
-    const due = str(s.due) ?? str(s.due_date) ?? "";
+    // Python shape: { total_amount, bills: [{ biller_name_ar, account_label_ar, amount, ... }] }
+    const bills = (Array.isArray(s.bills) ? s.bills : []) as Array<Record<string, unknown>>;
+    const first = bills[0] ?? {};
+    const amount =
+      num(s.total_amount) ?? num(s.amount) ?? num(first.amount) ?? 0;
+    const biller =
+      str(first.biller_name_ar) ??
+      str(s.biller_ar) ??
+      str(s.biller) ??
+      "فاتورة";
+    const due =
+      str(first.due_date) ??
+      str(s.due_date) ??
+      str(s.due) ??
+      "";
     return {
       flow: "bill-confirm",
       flowContext: { selected: { biller, amount, due } },

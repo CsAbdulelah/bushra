@@ -117,7 +117,7 @@ function BillConfirmCard({ ctx }: { ctx: FlowContext }) {
         <>
           <div className="mb-2.5 text-right text-xs font-bold text-alinma-navy">تفاصيل الفاتورة</div>
           <Row label="الجهة" value={<span className="text-[13px] font-semibold">{selected.biller}</span>} />
-          <Row label="المبلغ" value={<span className="text-[15px] font-bold">{selected.amount.toFixed(2)} ر.س</span>} />
+          <Row label="المبلغ" value={<span className="text-[15px] font-bold">{(selected.amount ?? 0).toFixed(2)} ر.س</span>} />
           <Row
             label="الاستحقاق"
             value={<span className="rounded-md bg-[#fff0f0] px-2 py-0.5 text-xs font-semibold text-alinma-red">{selected.due}</span>}
@@ -235,7 +235,7 @@ function SavingsCard({ ctx }: { ctx: FlowContext }) {
         <div className="mb-1 text-[32px] font-extrabold leading-none">{rate}%</div>
         <div className="mb-3 text-xs text-white/70">عائد سنوي مضمون</div>
         <div className="flex justify-between rounded-lg bg-white/10 p-2.5">
-          <span className="text-[13px] font-bold">{yearly.toFixed(2)} ر.س</span>
+          <span className="text-[13px] font-bold">{(yearly ?? 0).toFixed(2)} ر.س</span>
           <span className="text-[11px] opacity-70">العائد السنوي على {monthly} ر.س</span>
         </div>
       </div>
