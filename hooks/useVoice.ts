@@ -1,49 +1,78 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { VoiceCapture } from "@/lib/bushra/voice";
+import { RealtimeVoice } from "@/lib/bushra/realtime";
 import { useBushra } from "@/hooks/useBushra";
+import type { FlowId } from "@/lib/bushra/events";
 
 /**
- * Wires VoiceCapture to the Bushra session:
- * - opens/closes the voice modal via provider state
- * - streams mic audio to the ASR service
- * - on `final` transcript, submits the text through the session pipeline
- *
- * When ASR is not configured, the modal still works but relies on the demo
- * command chips (voice commands as pre-typed text shortcuts).
+ * Realtime voice mode. Opens a WebRTC session to OpenAI, streams the user's
+ * mic up and Bushra's Arabic voice down. Banking tool calls made by the
+ * model are routed to the Python backend and their results are:
+ *   • fed back into the conversation so the model speaks them, and
+ *   • dispatched as flow-card + dashboard-refresh events for the UI.
  */
 export function useVoice() {
   const b = useBushra();
-  const captureRef = useRef<VoiceCapture | null>(null);
+  const rtRef = useRef<RealtimeVoice | null>(null);
 
   useEffect(() => {
     if (!b.voiceOpen) {
-      // Modal was closed by user (X) or by a final transcript. Trigger a stop
-      // on the current capture so the recorded audio uploads and yields a
-      // `final` event that we still catch (listeners stay subscribed).
-      captureRef.current?.stop();
+      rtRef.current?.stop();
+      rtRef.current = null;
       return;
     }
 
-    const cap = new VoiceCapture();
-    captureRef.current = cap;
-    cap.on((evt) => {
-      if (evt.type === "phase") b.setVoicePhase(evt.phase);
-      else if (evt.type === "partial") b.setVoiceText(evt.text);
-      else if (evt.type === "final") {
-        b.setVoiceText(evt.text);
-        b.stopVoice();
-        b.send(evt.text);
-      } else if (evt.type === "error") {
-        b.setVoiceText("");
-        b.stopVoice();
+    const rt = new RealtimeVoice();
+    rtRef.current = rt;
+
+    rt.on((evt) => {
+      switch (evt.type) {
+        case "status":
+          if (evt.status === "connecting") {
+            b.setVoicePhase("processing");
+            b.setVoiceText("جاري الاتصال…");
+          } else if (evt.status === "listening") {
+            b.setVoicePhase("listening");
+            if (!b.voiceText) b.setVoiceText("تكلّم الآن");
+          } else if (evt.status === "responding") {
+            b.setVoicePhase("processing");
+          } else if (evt.status === "error") {
+            b.setVoicePhase("idle");
+          }
+          break;
+        case "user_transcript":
+          if (evt.text.trim()) b.setVoiceText(evt.text);
+          break;
+        case "assistant_transcript":
+          if (evt.text.trim()) b.setVoiceText(evt.text);
+          break;
+        case "flow":
+          // Flow card driven by the voice pipeline. Emit through the global
+          // event bus so BushraProvider (which owns activeFlow) picks it up.
+          window.dispatchEvent(
+            new CustomEvent("bushra:flow", {
+              detail: { flowId: evt.flowId as FlowId | null, flowContext: evt.flowContext },
+            }),
+          );
+          break;
+        case "bank_action_completed":
+          // Tell useLiveBank to re-fetch the customer summary.
+          window.dispatchEvent(new CustomEvent("bushra:bank-refresh"));
+          break;
+        case "error":
+          b.setVoiceText(`⚠️ ${evt.message}`);
+          break;
       }
     });
-    cap.start();
+
+    rt.start();
+    return () => {
+      rt.stop();
+    };
   }, [b.voiceOpen, b]);
 
-  /** Called by the demo command chips inside the voice modal. */
+  /** Kept for the demo command chips inside the voice modal. */
   const runDemoCommand = useCallback(
     (arabic: string) => {
       b.setVoicePhase("processing");

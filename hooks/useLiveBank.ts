@@ -54,6 +54,14 @@ export function useLiveBank(): BankSnapshot & { refresh: () => void } {
     });
   }, [ctx, refresh]);
 
+  // The Realtime voice pipeline dispatches this after any successful
+  // banking action (transfer, bill payment, card freeze, etc.).
+  useEffect(() => {
+    const handler = () => refresh();
+    window.addEventListener("bushra:bank-refresh", handler);
+    return () => window.removeEventListener("bushra:bank-refresh", handler);
+  }, [refresh]);
+
   return { ...data, refresh };
 }
 

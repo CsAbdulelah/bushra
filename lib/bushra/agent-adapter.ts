@@ -23,10 +23,14 @@ type SessionEntry = {
 };
 
 /**
- * Module-level session map. Fine for demo + single Node process. On Vercel
- * serverless the map is per-instance; move to Redis/Vercel KV for prod.
+ * Session map pinned to globalThis so it survives Next dev's HMR module
+ * reloads and shares state across concurrent route handlers within the same
+ * Node process. On Vercel serverless the map is per-instance; move to
+ * Redis/Vercel KV for prod.
  */
-const sessions = new Map<string, SessionEntry>();
+const g = globalThis as { __bushraSessions?: Map<string, SessionEntry> };
+if (!g.__bushraSessions) g.__bushraSessions = new Map<string, SessionEntry>();
+const sessions = g.__bushraSessions;
 
 export type PythonConfirmation = {
   type: string;

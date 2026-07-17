@@ -117,6 +117,21 @@ export function BushraProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, []);
 
+  // Flow cards dispatched by the Realtime voice pipeline (which runs
+  // outside the BushraSession event bus).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { flowId: FlowId | null; flowContext?: Record<string, unknown> }
+        | undefined;
+      if (!detail) return;
+      setActiveFlow(detail.flowId);
+      setFlowContext(detail.flowContext);
+    };
+    window.addEventListener("bushra:flow", handler);
+    return () => window.removeEventListener("bushra:flow", handler);
+  }, []);
+
   // Wire session events to state.
   useEffect(() => {
     // Accumulator so message_end can hand the whole assistant reply to TTS.
